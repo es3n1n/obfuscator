@@ -1,0 +1,55 @@
+[template.obfuscator-executable]
+type = "executable"
+compile-features = ["cxx_std_23"]
+compile-definitions = ["NOMINMAX"]
+unix.compile-options = [
+    "-stdlib=libc++",
+    # "-Wall",
+    # "-Wextra",
+    # "-Wpedantic",
+    # "-Wno-nested-anon-types",
+    # "-Wno-gnu-anonymous-struct",
+    # "-Wno-unused-function",
+]
+unix.link-options = ["-fuse-ld=lld", "-Wl,-L/usr/local/lib/"]
+
+
+[target.obfuscator-lib]
+alias = "obfuscator::lib"
+type = "interface"
+compile-features = ["cxx_std_23"]
+include-directories = ["lib/"]
+sources = ["lib/**.cpp", "lib/**.hpp"]
+link-libraries = [
+    "zasm",
+    "linux-pe",
+    "magic_enum",
+]
+
+
+[target.obfuscator]
+type = "obfuscator-executable"
+sources = ["bin/**.cpp", "bin/**.hpp"]
+include-directories = ["bin/"]
+link-libraries = ["obfuscator::lib"]
+
+
+[target.obfuscator-tests]
+type = "obfuscator-executable"
+sources = ["tests/**.cpp", "tests/**.hpp"]
+include-directories = ["tests/"]
+link-libraries = ["obfuscator::lib", "GTest::gtest_main"]
+cmake-after = """
+FetchContent_MakeAvailable(resources)
+target_compile_definitions(obfuscator-tests PRIVATE OBFUSCATOR_RESOURCES_PATH="${resources_SOURCE_DIR}")
+"""
+
+
+[target.obfuscator-tests.properties]
+PROJECT_LABEL = "tests"
+
+
+[[test]]
+condition = "build-tests"
+name = "tests"
+command = "$<TARGET_FILE:obfuscator-tests>"

@@ -1,0 +1,17 @@
+[cmake]
+version = "3.15"
+cmkr-include = "cmake/cmkr.cmake"
+
+[project]
+name = "obfuscator"
+languages = ["CXX"]
+msvc-runtime = "static"
+
+[options]
+OBFUSCATOR_BUILD_TESTS = true
+
+[conditions]
+build-tests = "OBFUSCATOR_BUILD_TESTS"
+
+[subdir.vendor]
+[subdir.src]

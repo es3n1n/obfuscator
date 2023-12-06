@@ -1,0 +1,12 @@
+[submodule "vendor/zasm"]
+	path = vendor/zasm
+	url = https://github.com/zyantific/zasm.git
+[submodule "vendor/linux-pe"]
+	path = vendor/linux-pe
+	url = https://github.com/can1357/linux-pe.git
+[submodule "vendor/magic_enum"]
+	path = vendor/magic_enum
+	url = https://github.com/Neargye/magic_enum.git
+[submodule "vendor/gtest"]
+	path = vendor/gtest
+	url = https://github.com/google/googletest

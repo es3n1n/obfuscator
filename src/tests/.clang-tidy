@@ -1,0 +1,3 @@
+# Disable all clang tidy checks for obscure testing code
+
+Checks: '-*'

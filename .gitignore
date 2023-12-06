@@ -1,0 +1,26 @@
+# CMake
+cmake-build-*/
+./build*/
+cmake/build*/
+
+# IDEs
+.idea/
+.vscode/
+.vs/
+
+# Python stuff
+__pycache__/
+*.pyc
+
+# Samples
+samples/
+*.exe
+*.dll
+*.sys
+
+# IDA stuff
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
