@@ -86,7 +86,7 @@ namespace obfuscator::transform_util {
                 /// Pop the encrypted val
                 assembler->pop(xchg_enc_holder->root_gp());
                 /// Push it on stack with xchg operation
-                assembler->xchg(qword_ptr(easm::sp_for_arch<Img>()), xchg_enc_holder->root_gp());
+                assembler->xchg(easm::ptr<Img>(easm::sp_for_arch<Img>()), xchg_enc_holder->root_gp());
                 /// Load to register
                 assembler->pop(xchg_enc_holder->root_gp());
             };
