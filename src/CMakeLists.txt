@@ -152,6 +152,12 @@ if(UNIX) # unix
 	)
 endif()
 
+if(MSVC) # msvc
+	target_compile_options(obfuscator PRIVATE
+		"/wd4661"
+	)
+endif()
+
 if(UNIX) # unix
 	target_link_options(obfuscator PRIVATE
 		-fuse-ld=lld
@@ -201,6 +207,12 @@ target_compile_features(obfuscator-tests PRIVATE
 if(UNIX) # unix
 	target_compile_options(obfuscator-tests PRIVATE
 		-stdlib=libc++
+	)
+endif()
+
+if(MSVC) # msvc
+	target_compile_options(obfuscator-tests PRIVATE
+		"/wd4661"
 	)
 endif()
 

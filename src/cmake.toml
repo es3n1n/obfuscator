@@ -12,6 +12,7 @@ unix.compile-options = [
     # "-Wno-unused-function",
 ]
 unix.link-options = ["-fuse-ld=lld", "-Wl,-L/usr/local/lib/"]
+msvc.compile-options = ["/wd4661"]
 
 
 [target.obfuscator-lib]
