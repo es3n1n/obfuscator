@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <variant>
+#include <stdexcept>
 
 #include <zasm/zasm.hpp>
 
@@ -29,16 +30,16 @@ namespace mathop {
         ArgumentImm result;
         switch (getBitSize(bit_size)) {
         case 8:
-            result.emplace<std::int8_t>(value);
+            result.emplace<std::int8_t>(static_cast<std::int8_t>(value));
             break;
         case 16:
-            result.emplace<std::int16_t>(value);
+            result.emplace<std::int16_t>(static_cast<std::int16_t>(value));
             break;
         case 32:
-            result.emplace<std::int32_t>(value);
+            result.emplace<std::int32_t>(static_cast<std::int32_t>(value));
             break;
         case 64:
-            result.emplace<std::int64_t>(value);
+            result.emplace<std::int64_t>(static_cast<std::int64_t>(value));
             break;
         default:
             throw std::runtime_error("imm_for_bits: unsupported bitsize");

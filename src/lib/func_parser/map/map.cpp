@@ -21,7 +21,7 @@ namespace func_parser::map {
 
         std::uint32_t parse_decimal_string(const std::string& value) {
             // NOLINTNEXTLINE
-            return std::stoull(value, nullptr, 10);
+            return std::stoul(value, nullptr, 10);
         }
     } // namespace
 

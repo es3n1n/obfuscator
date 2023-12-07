@@ -35,8 +35,10 @@ namespace rnd {
     /// \return random number
     template <typename Ty = std::uint32_t, typename TyVal = std::remove_reference_t<Ty>, typename Limits = std::numeric_limits<TyVal>>
     TyVal number(const TyVal min = Limits::min(), const TyVal max = Limits::max()) {
-        std::uniform_int_distribution<TyVal> dist(min, max);
-        return dist(detail::prng);
+        /// We cannot generate une byte of data with uniform_int_distribution
+        using GenTy = std::conditional_t<types::is_any_of_v<Ty, std::int8_t, std::uint8_t, char>, int, TyVal>;
+        std::uniform_int_distribution<GenTy> dist(min, max);
+        return static_cast<TyVal>(dist(detail::prng));
     }
 
     /// \brief Generate a number of bytes
