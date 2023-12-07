@@ -192,8 +192,12 @@ namespace logger {
                 if (show_timestamps) {
                     auto now = std::chrono::system_clock::now();
                     std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+#if PLATFORM_IS_MSVC
                     std::tm now_tm;
                     localtime_s(&now_tm, &time_now);
+#else
+                    std::tm now_tm = *std::localtime(&time_now);
+#endif
 
                     auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
