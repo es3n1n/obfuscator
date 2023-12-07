@@ -134,6 +134,11 @@ namespace obfuscator::transform_util {
             // break;
         }
 
+        /// Hm
+        if (!cf_val_holder.has_value()) [[unlikely]] {
+            return;
+        }
+
         /// Restore CF
         auto if_set = program->createLabel();
         assembler->test(cf_val_holder->root_gp(), cf_val_holder->root_gp());

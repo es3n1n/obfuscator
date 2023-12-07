@@ -17,6 +17,9 @@ namespace pe::detail {
             /// Obtaining sections pointer within the nt headers
             auto* sections = out_img->get_nt_headers()->get_sections();
 
+            /// Raligning sections
+            image->realign_sections();
+
             /// Validating that there's enough space for our sections
             auto sections_start = memory::address{sections};
             auto header_end = memory::address{out_img}.offset(optional_header->size_headers);

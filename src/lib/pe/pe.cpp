@@ -87,18 +87,38 @@ namespace pe {
         // Assembling the new section
         //
         std::copy_n(name.begin(), std::min(new_sec.name.size() - 1, name.size()), new_sec.name.begin());
-        new_sec.size_raw_data = new_sec.virtual_size = memory::address{size} //
+
+        new_sec.virtual_size = new_sec.size_raw_data = memory::address{size} //
                                                            .align_up(section_alignment)
                                                            .template as<uint32_t>();
+
         new_sec.virtual_address = memory::address{last_section.virtual_address + last_section.virtual_size} //
                                       .align_up(section_alignment)
                                       .template as<uint32_t>();
+
         new_sec.ptr_raw_data = memory::address{last_section.ptr_raw_data + last_section.size_raw_data} //
                                    .align_up(file_alignment)
                                    .template as<uint32_t>();
+
         new_sec.characteristics = characteristics;
 
         return new_sec;
+    }
+    
+    template <any_raw_image_t Img>
+    void Image<Img>::realign_sections() {
+        /// Nothing to realign
+        if (sections.size() <= 1) {
+            return;
+        }
+
+        /// Making sure that all section virtual sizes are aligned
+        for (std::size_t i = 0; i < sections.size() - 1; ++i) {
+            auto& sec = sections.at(i);
+            auto& next_sec = sections.at(i + 1);
+
+            sec.virtual_size = next_sec.virtual_address - sec.virtual_address;
+        }
     }
 
     template <any_raw_image_t Img>
@@ -136,7 +156,7 @@ namespace pe {
             // Inserting a section to the result array
             //
             auto& new_elem = sections.emplace_back(*section);
-            new_elem.raw_data.resize(new_elem.size_raw_data);
+            new_elem.raw_data.resize(new_elem.size_raw_data, 0);
 
             // NOLINTNEXTLINE
             std::memcpy(new_elem.raw_data.data(), reinterpret_cast<std::uint8_t*>(reinterpret_cast<uintptr_t>(raw_image) + new_elem.ptr_raw_data), //
