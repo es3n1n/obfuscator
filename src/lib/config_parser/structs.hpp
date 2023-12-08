@@ -11,7 +11,7 @@ namespace config_parser {
     };
 
     struct function_configuration_t {
-        std::string function_name = "";
+        std::string function_name = {};
         std::vector<transform_configuration_t> transform_configurations = {};
     };
 

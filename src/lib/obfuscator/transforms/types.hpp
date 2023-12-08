@@ -1,7 +1,6 @@
 #pragma once
 #include "analysis/analysis.hpp"
 #include "easm/cursor/cursor.hpp"
-#include "func_parser/parser.hpp"
 #include "pe/pe.hpp"
 #include "util/types.hpp"
 

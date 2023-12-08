@@ -66,8 +66,8 @@ namespace analysis::debug {
 
             if (!instruction->cf.empty()) {
                 logger::info<3>("CF:");
-                for (const auto& [bb, type, _, __] : instruction->cf) {
-                    logger::info<4>("{}: {:#x}", magic_enum::enum_name<cf_direction_t::e_type>(type), *bb->start_rva);
+                for (const auto& cf : instruction->cf) {
+                    logger::info<4>("{}: {:#x}", magic_enum::enum_name<cf_direction_t::e_type>(cf.type), *cf.bb->start_rva);
                 }
             }
 

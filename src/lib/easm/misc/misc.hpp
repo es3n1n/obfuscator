@@ -90,7 +90,7 @@ namespace easm {
         return follow_jcc_or_jmp(insn_info);
     }
 
-    inline std::optional<zasm::BitSize> get_operand_size(const zasm::MachineMode machine_mode, const zasm::Operand operand) {
+    inline std::optional<zasm::BitSize> get_operand_size(const zasm::MachineMode machine_mode, const zasm::Operand& operand) {
         if (auto* op_reg = operand.getIf<zasm::Reg>()) {
             return op_reg->getBitSize(machine_mode);
         }

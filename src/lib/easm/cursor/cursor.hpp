@@ -78,7 +78,7 @@ namespace easm {
 
         /// \brief Set cursor at the program tail (end)
         /// \return assembler ptr
-        std::optional<zasm::x86::Assembler*> program_tail() const noexcept {
+        [[nodiscard]] std::optional<zasm::x86::Assembler*> program_tail() const noexcept {
             assembler_->setCursor(program_->getTail());
             return std::make_optional(assembler_.get());
         }

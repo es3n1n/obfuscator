@@ -20,7 +20,7 @@ namespace mathop::operations {
     /// \param assembler zasm assembler
     /// \param operand dst operand
     /// \param argument optional rhs
-    void Add::lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument) const {
+    void Add::lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, const std::optional<Argument> argument) const {
         lift(
             argument, detail::none,
             [assembler, operand](const zasm::x86::Gp reg) -> void { //

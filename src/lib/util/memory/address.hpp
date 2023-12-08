@@ -34,7 +34,7 @@ namespace memory {
                 return *this;
             }
 
-            return address(address_ + offset);
+            return {address_ + offset};
         }
 
         std::expected<address, e_error_code> write(const void* buffer, const std::size_t size) {
@@ -70,7 +70,7 @@ namespace memory {
             return dst;
         }
 
-        std::expected<std::vector<std::uint8_t>, e_error_code> read_vector(const std::size_t size) const {
+        [[nodiscard]] std::expected<std::vector<std::uint8_t>, e_error_code> read_vector(const std::size_t size) const {
             std::vector<std::uint8_t> result = {};
             result.resize(size);
 
@@ -131,7 +131,7 @@ namespace memory {
         }
 
         [[nodiscard]] constexpr address align_down(const std::ptrdiff_t factor) const noexcept {
-            return address(address_ & ~(factor - 1U));
+            return {address_ & ~(factor - 1U)};
         }
 
         [[nodiscard]] constexpr address align_up(const std::ptrdiff_t factor) const noexcept {

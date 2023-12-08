@@ -58,7 +58,7 @@ namespace obfuscator {
         /// Store function info
         functions_.emplace_back(function_t{
             .analysed = analysis::analyse(image_, function_info.value()),
-            .configuration = std::move(configuration),
+            .configuration = configuration,
         });
     }
 

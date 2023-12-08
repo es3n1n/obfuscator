@@ -14,6 +14,7 @@ namespace analysis {
         /// \brief Init the observer
         /// \param program zasm program that it should be attached to
         /// \param bb_storage already analysed basic block storage
+        /// \param bb_provider shared provider instance (should be already initialized)
         explicit Observer(const std::shared_ptr<zasm::Program>& program, const std::shared_ptr<bb_storage_t>& bb_storage,
                           const std::shared_ptr<functional_bb_provider_t>& bb_provider)
             : program_(program), bb_storage_(bb_storage), bb_provider_(bb_provider) {
@@ -21,7 +22,7 @@ namespace analysis {
         }
 
         /// \brief Shutdown observer
-        ~Observer() {
+        ~Observer() override {
             program_->removeObserver(*this);
         }
 
@@ -57,11 +58,11 @@ namespace analysis {
             }
 
             /// Try to find prev/next nodes
-            auto prev_pair = find_node(node->getPrev(), [](zasm::Node* node) -> zasm::Node* {
-                return node->getPrev(); //
+            auto prev_pair = find_node(node->getPrev(), [](zasm::Node* cur_node) -> zasm::Node* {
+                return cur_node->getPrev(); //
             });
-            auto next_pair = find_node(node->getNext(), [](zasm::Node* node) -> zasm::Node* {
-                return node->getNext(); //
+            auto next_pair = find_node(node->getNext(), [](zasm::Node* cur_node) -> zasm::Node* {
+                return cur_node->getNext(); //
             });
 
             /// util

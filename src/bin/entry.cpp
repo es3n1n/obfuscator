@@ -7,8 +7,6 @@
 #include "util/logger.hpp"
 #include "util/random.hpp"
 
-#include "mathop/mathop.hpp"
-
 namespace {
     template <pe::any_raw_image_t Img>
     void bootstrap(Img* raw_image, config_parser::Config& config) {

@@ -13,8 +13,8 @@ namespace func_parser {
 
         void setup(Img* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config) {
             image_ = image;
-            config_ = std::move(config);
-            obfuscator_config_ = std::move(obfuscator_config);
+            config_ = config;
+            obfuscator_config_ = obfuscator_config;
         }
 
         void collect_functions();

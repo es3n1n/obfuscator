@@ -20,7 +20,7 @@ namespace mathop::operations {
     /// \param assembler zasm assembler
     /// \param operand dst operand
     /// \param argument optional rhs
-    void Dec::lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument) const {
+    void Dec::lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp operand, std::optional<Argument> argument) const {
         assembler->inc(operand);
     }
 } // namespace mathop::operations

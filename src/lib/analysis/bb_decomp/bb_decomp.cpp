@@ -46,7 +46,7 @@ namespace analysis::bb_decomp {
         });
 
         // Label finder
-        bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
+        bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
             // Searching in basic blocks with rvas first
             for (auto& [_, bb] : basic_blocks_) {
                 auto it = bb->labels.find(label->getId());
@@ -361,7 +361,7 @@ namespace analysis::bb_decomp {
             }
 
             auto& last_insn = bb->instructions.at(bb->size() - 1);
-            auto last_mnemonic = last_insn.get()->ref->getMnemonic().value();
+            const auto last_mnemonic = last_insn.get()->ref->getMnemonic().value();
 
             /// Looks legit, i think?
             if (last_mnemonic == ZYDIS_MNEMONIC_JMP || last_mnemonic == ZYDIS_MNEMONIC_RET) {
@@ -443,7 +443,7 @@ namespace analysis::bb_decomp {
         /// Iterating over the all basic blocks
         for (auto& [_, bb] : basic_blocks_) {
             /// Trying to find the insn with CF changers
-            auto& last_insn = bb->instructions.at(bb->size() - 1);
+            const auto& last_insn = bb->instructions.at(bb->size() - 1);
 
             /// No CF info
             if (last_insn->cf.empty()) {
@@ -478,7 +478,7 @@ namespace analysis::bb_decomp {
                 assert(next_node != nullptr);
 
                 /// Storing its BB
-                auto* analysis_info = next_node->getUserData<insn_t>();
+                const auto* analysis_info = next_node->getUserData<insn_t>();
                 auto acquired_ref = bb_provider_->acquire_ref(analysis_info->bb_ref);
                 assert(acquired_ref.has_value());
                 cf_changer.bb = acquired_ref.value();
@@ -508,7 +508,7 @@ namespace analysis::bb_decomp {
             /// Looking for the dead CF changer refs
             /// (because since we're splitting them, the dst bb could've been already deleted at some point)
             for (auto it = bb->instructions.rbegin(); it != bb->instructions.rend(); std::advance(it, 1)) {
-                auto insn = *it;
+                const auto insn = *it;
                 if (insn->cf.empty()) {
                     continue;
                 }
@@ -554,14 +554,14 @@ namespace analysis::bb_decomp {
                 }
 
                 /// Get its BB and emplace it as the successor
-                auto* analysis_info = last_node->getUserData<insn_t>();
+                const auto* analysis_info = last_node->getUserData<insn_t>();
                 auto acquired_bb = bb_provider_->acquire_ref(analysis_info->bb_ref);
                 assert(acquired_bb.has_value());
                 bb->successors.emplace_back(acquired_bb.value());
             }
 
             /// Iterating over the successors and updating predecessors in successors
-            for (auto& successor : bb->successors) {
+            for (const auto& successor : bb->successors) {
                 successor->predecessors.emplace_back(bb);
             }
         }

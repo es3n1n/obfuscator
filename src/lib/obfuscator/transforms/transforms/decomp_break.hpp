@@ -42,7 +42,7 @@ namespace obfuscator::transforms {
             /// Generate an opaque predicate and insert ENTER -1 somewhere over there
             transform_util::generate_bogus_confrol_flow<Img>(
                 function, bb,
-                [&](std::shared_ptr<analysis::bb_t> new_bb) -> void {
+                [&](const std::shared_ptr<analysis::bb_t>& new_bb) -> void {
                     /// Set cursor somewhere in the BB (-2 because i don't feel like placing it after the last insn)
                     auto* as = *function->cursor->after(
                         new_bb->node_at(rnd::number<size_t>(static_cast<size_t>(0), std::max(new_bb->size(), static_cast<size_t>(2)) - 2)));

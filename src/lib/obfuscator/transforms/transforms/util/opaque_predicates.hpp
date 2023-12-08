@@ -9,7 +9,7 @@ namespace obfuscator::transform_util {
     /// \param dead_branch_label Dead branch
     /// \param var_alloc_ptr Var allocator
     template <pe::any_image_t Img>
-    void generate_opaque_predicate(zasm::x86::Assembler* as, zasm::Label successor_label, zasm::Label dead_branch_label,
+    void generate_opaque_predicate(zasm::x86::Assembler* as, const zasm::Label successor_label, const zasm::Label dead_branch_label,
                                    analysis::VarAlloc<Img>* var_alloc_ptr) {
         /// I don't feel like changing these stubs -- fixme
         auto& var_alloc = *var_alloc_ptr;

@@ -63,8 +63,8 @@ namespace analysis::bb_decomp {
         void collect_jumptable_entries();
         void expand_jumptables();
 
-        std::shared_ptr<bb_t> make_successor(const rva_t successor, bb_t* predecessor) {
-            auto predecssor_ref = bb_provider_->acquire_ref(predecessor);
+        std::shared_ptr<bb_t> make_successor(const rva_t successor, const bb_t* predecessor) {
+            const auto predecssor_ref = bb_provider_->acquire_ref(predecessor);
             assert(predecssor_ref.has_value());
             return make_successor(successor, predecssor_ref.value());
         }

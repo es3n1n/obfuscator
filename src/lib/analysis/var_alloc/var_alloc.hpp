@@ -25,13 +25,13 @@ namespace analysis {
 
         /// Implicit conversion to Operand so that we can pass this as an operand
         [[nodiscard]] /* implicit */ operator zasm::Operand() const {
-            return zasm::Operand(reg);
+            return {reg};
         }
 
         /// \brief Convert root register to gp
         /// \return gp instance
-        [[nodiscard]] zasm::x86::Gp root_gp() const {
-            return zasm::x86::Gp(root_reg.getId());
+        [[nodiscard]] auto root_gp() const {
+            return zasm::x86::Gp{root_reg.getId()};
         }
     };
 

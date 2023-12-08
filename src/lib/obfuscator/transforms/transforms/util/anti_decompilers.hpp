@@ -140,7 +140,7 @@ namespace obfuscator::transform_util {
         }
 
         /// Restore CF
-        auto if_set = program->createLabel();
+        const auto if_set = program->createLabel();
         assembler->test(cf_val_holder->root_gp(), cf_val_holder->root_gp());
         assembler->jnz(if_set);
         assembler->clc();

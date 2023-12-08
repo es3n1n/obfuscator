@@ -279,7 +279,7 @@ namespace obfuscator {
             /// \brief First value holder
             std::any default_value_ = {};
             /// \brief Var name
-            std::string name_ = "";
+            std::string name_ = {};
             /// \brief Short description (1 line max)
             std::optional<std::string> short_description_ = "";
             /// \brief Is var required to set by user
