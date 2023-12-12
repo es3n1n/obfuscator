@@ -150,6 +150,5 @@ namespace obfuscator::transform_util {
         /// Clear CF if needed
         assembler->jnz(if_set);
         assembler->clc();
-        assembler->bind(if_set);
     }
 } // namespace obfuscator::transform_util
