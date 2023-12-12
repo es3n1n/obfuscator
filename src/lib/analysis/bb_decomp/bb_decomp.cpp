@@ -14,12 +14,12 @@ namespace analysis::bb_decomp {
         const auto img_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
 
         // Make successor proxy
-        bb_provider_->set_va_finder([this, img_base](const rva_t va, bb_t* callee) {
+        bb_provider_->set_va_finder([this, img_base](const rva_t va, const bb_t* callee) {
             return make_successor(va - img_base, callee); //
         });
 
         // Make successor proxy
-        bb_provider_->set_rva_finder([this](const rva_t rva, bb_t* callee) {
+        bb_provider_->set_rva_finder([this](const rva_t rva, const bb_t* callee) {
             return make_successor(rva, callee); //
         });
 
@@ -49,8 +49,7 @@ namespace analysis::bb_decomp {
         bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
             // Searching in basic blocks with rvas first
             for (auto& [_, bb] : basic_blocks_) {
-                auto it = bb->labels.find(label->getId());
-                if (it == std::end(bb->labels)) {
+                if (!bb->contains_label(label->getId())) {
                     continue;
                 }
 
@@ -59,8 +58,7 @@ namespace analysis::bb_decomp {
 
             // Searching in virtual basic blocks
             for (auto& bb : virtual_basic_blocks_) {
-                auto it = bb->labels.find(label->getId());
-                if (it == std::end(bb->labels)) {
+                if (!bb->contains_label(label->getId())) {
                     continue;
                 }
 
@@ -430,7 +428,7 @@ namespace analysis::bb_decomp {
             /// Place the jmp
             assembler_->setCursor(last_insn->node_ref);
             assembler_->jmp(label);
-            push_last_instruction(bb);
+            (void)push_last_instruction(bb);
 
             /// Theoretically now we should jump where we should?
         }

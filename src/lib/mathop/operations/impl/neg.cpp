@@ -6,7 +6,7 @@ namespace mathop::operations {
     /// \param op1 lhs
     /// \param op2 rhs
     /// \return emulated result
-    ArgumentImm Neg::emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const {
+    ArgumentImm Neg::emulate(ArgumentImm op1, std::optional<ArgumentImm>) const {
         ArgumentImm result;
         std::visit(
             [&]<typename Ty>(Ty&& op1_value) -> void { //
@@ -20,7 +20,7 @@ namespace mathop::operations {
     /// \param assembler zasm assembler
     /// \param operand dst operand
     /// \param argument optional rhs
-    void Neg::lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp operand, std::optional<Argument> argument) const {
+    void Neg::lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp operand, std::optional<Argument>) const {
         assembler->neg(operand);
     }
 } // namespace mathop::operations

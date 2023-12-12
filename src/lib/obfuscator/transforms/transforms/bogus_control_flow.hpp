@@ -54,7 +54,7 @@ namespace obfuscator::transforms {
                     function, bb.get(),
                     [&](const std::shared_ptr<analysis::bb_t>& new_bb) -> void {
                         /// Tamper data if needed
-                        switch (mode) {
+                        switch (mode) { // NOLINT
                         case Mode::OPAQUE_PREDICATES:
                             tamper_instructions(function, new_bb);
                             break;

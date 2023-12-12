@@ -43,8 +43,9 @@ namespace analysis {
             /// Set Label finder
             bb_provider->set_label_finder([storage = bb_storage.get()](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
                 for (auto& bb : storage->basic_blocks) {
-                    auto it = bb->labels.find(label->getId());
-                    if (it != std::end(bb->labels)) {
+                    /// Continue if bb doesn't contain this label
+                    if (auto it = bb->labels.find(label->getId()); //
+                        it != std::end(bb->labels)) {
                         continue;
                     }
 

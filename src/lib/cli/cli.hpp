@@ -62,7 +62,7 @@ namespace cli {
         pad();
 
         logger::info("Available options:");
-        std::vector<std::pair<std::array<std::string, 3>, std::string>> options = {
+        static std::vector<std::pair<std::array<std::string, 3>, std::string>> options = {
             {{"-h, --help", "", ""}, "This message"},
             {{"-pdb", "[path]", ""}, "Set custom .pdb file location"},
             {{"-map", "[path]", ""}, "Set custom .map file location"},

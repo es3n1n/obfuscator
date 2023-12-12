@@ -18,10 +18,10 @@ namespace memory {
         constexpr address() = default;
 
         /// Implicit conversions ftw
-        constexpr address(const std::nullptr_t) { }
-        constexpr address(const uintptr_t address): address_(address) { }
-        address(const void* address): address_(reinterpret_cast<uintptr_t>(address)) { }
-        address(const std::vector<std::uint8_t>& data): address_(reinterpret_cast<uintptr_t>(data.data())) { }
+        constexpr address(const std::nullptr_t) { } // NOLINT
+        constexpr address(const uintptr_t address): address_(address) { } // NOLINT
+        address(const void* address): address_(reinterpret_cast<uintptr_t>(address)) { } // NOLINT
+        address(const std::vector<std::uint8_t>& data): address_(reinterpret_cast<uintptr_t>(data.data())) { } // NOLINT
 
         address(const address& inst) = default;
         address(address&& inst) = default;

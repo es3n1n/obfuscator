@@ -501,6 +501,10 @@ namespace analysis {
             throw std::runtime_error(std::format("last_non_jmp_insn: unable to query ({})", static_cast<int>(include_conditional_jmps)));
         }
 
+        [[nodiscard]] bool contains_label(const zasm::Label::Id label_id) const {
+            return labels.contains(label_id);
+        }
+
         void clear() {
             // Clearing all BB state
             //
