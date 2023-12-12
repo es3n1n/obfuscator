@@ -67,6 +67,10 @@ namespace obfuscator {
         /// Debug log
         logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size());
 
+        if (functions_.empty()) {
+            throw std::runtime_error("obfuscator: got 0 functions to protect");
+        }
+
         /// Obtain transform scheduler for the platform
         auto& scheduler = TransformScheduler::get().for_arch<Img>();
         config_merger::apply_global_vars<Img>(config_);

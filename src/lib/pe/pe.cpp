@@ -74,6 +74,7 @@ namespace pe {
         // Reserving section size
         //
         new_sec.raw_data.resize(size, 0);
+        assert(size > 0);
 
         // Obtaining last section
         //

@@ -36,11 +36,14 @@ namespace obfuscator::transform_util {
         /// Temporary disable oserver
         function->observer->stop();
 
-        /// Create dead branch
+        /// Setup dead branch
         as = *function->cursor->after(last_insn->node_ref);
         as->bind(dummy_bb_label);
+        auto label_node = as->getCursor();
+
+        /// Create dead branch
         auto new_bb = function->bb_storage->copy_bb(successor, as, function->program.get(), function->bb_provider.get());
-        new_bb->push_label(as->getCursor(), function->bb_provider.get());
+        new_bb->push_label(label_node, function->bb_provider.get());
 
         /// Tamper instructions, if needed
         post_generation_callback(new_bb);
