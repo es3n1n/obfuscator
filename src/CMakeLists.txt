@@ -155,6 +155,7 @@ endif()
 if(MSVC) # msvc
 	target_compile_options(obfuscator PRIVATE
 		"/wd4661"
+		"/MP"
 	)
 endif()
 
@@ -213,6 +214,7 @@ endif()
 if(MSVC) # msvc
 	target_compile_options(obfuscator-tests PRIVATE
 		"/wd4661"
+		"/MP"
 	)
 endif()
 
