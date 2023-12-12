@@ -10,7 +10,6 @@ namespace obfuscator {
             CHANCE = 0,
             REPEAT_TIMES = 1,
         };
-
         inline std::array kSharedConfigsVariableNames = {"chance", "repeat"};
     } // namespace detail
 
@@ -62,23 +61,23 @@ namespace obfuscator {
         /// \param override_default Should we override the default value too?
         /// \return true on success, false on failure
         bool try_load(const std::string_view name, const std::string_view value, const bool override_default = false) noexcept {
-            static std::unordered_map<std::string, std::function<void()>> callbacks = {};
+            static std::unordered_map<std::string, std::function<void(TransformSharedConfig*, std::string_view, bool)>> callbacks = {};
 
             /// A little bit of overhead with this once flag, but now the init looks n i c e
             static std::once_flag fl;
-            std::call_once(fl, [&]() -> void {
-                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [&] {
-                    chance(util::string::parse_uint8(value), override_default);
+            std::call_once(fl, []() -> void {
+                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [](TransformSharedConfig* instance, const std::string_view value, const bool override_default) {
+                    instance->chance(util::string::parse_uint8(value), override_default);
                 };
 
-                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [&] {
-                    repeat_times(util::string::parse_uint8(value), override_default);
+                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [](TransformSharedConfig* instance, const std::string_view value, const bool override_default) {
+                    instance->repeat_times(util::string::parse_uint8(value), override_default);
                 };
             });
 
             /// Try to find the loader, and load if found
             if (const auto it = callbacks.find(name.data()); it != std::end(callbacks)) {
-                it->second();
+                it->second(this, value, override_default);
                 return true;
             }
 

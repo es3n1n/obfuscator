@@ -139,9 +139,15 @@ namespace obfuscator::transform_util {
             return;
         }
 
-        /// Restore CF
+        /// Check the stored CF value
         const auto if_set = program->createLabel();
         assembler->test(cf_val_holder->root_gp(), cf_val_holder->root_gp());
+
+        /// Bind the label and set cursor before the node
+        assembler->bind(if_set);
+        assembler->setCursor(assembler->getCursor()->getPrev());
+
+        /// Clear CF if needed
         assembler->jnz(if_set);
         assembler->clc();
         assembler->bind(if_set);

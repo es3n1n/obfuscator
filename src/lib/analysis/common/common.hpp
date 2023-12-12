@@ -709,8 +709,11 @@ namespace analysis {
                 auto label_node = program->bindLabel(label);
                 assert(label_node.hasValue());
 
-                /// Insert label, jmp to it
+                /// Insert label, remember it
                 program->insertBefore(successor->node_at(0), label_node.value());
+                successor->push_label(label_node.value(), provider);
+
+                /// Jmp to the successor
                 as->jmp(label);
                 bb->push_insn(as->getCursor(), provider);
             }
