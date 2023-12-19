@@ -1,5 +1,6 @@
 #pragma once
 #include "pe/rebuilder/detail/common.hpp"
+#include "util/progress.hpp"
 
 namespace pe {
     namespace detail {
@@ -23,22 +24,27 @@ namespace pe {
         // Init result data
         //
         std::vector<std::uint8_t> result = {};
+        auto progress = util::Progress("pe: rebuilding", 4);
 
         // Updating .reloc section
         //
         detail::update_relocations(ctx.wrap(), result);
+        progress.step();
 
         // Reserving and copying the original header first
         //
         detail::init_header(ctx.wrap(), result);
+        progress.step();
 
         // Copying sections
         //
         detail::copy_sections(ctx.wrap(), result);
+        progress.step();
 
         // Update checksum
         //
         detail::update_checksum(ctx.wrap(), result);
+        progress.step();
 
         // We are done here
         //
