@@ -23,8 +23,10 @@ namespace obfuscator {
 
         // Add functions from config, that we should protecc
         //
+        auto analysis_progress = util::Progress("obfuscator: setting up functions", config_.size());
         for (auto& configuration : config_) {
             add_function(configuration);
+            analysis_progress.step();
         }
 
         // Enable transforms from global config
@@ -89,6 +91,9 @@ namespace obfuscator {
 
             /// Export transforms
             auto transforms = scheduler.select_transforms(tags);
+
+            /// Init the progress bar
+            auto progress = util::Progress(std::format("obfuscator: obfuscating {}", obf_func.parsed_func.name), transforms.size());
 
             /// An util that would check the chances and all this other crap, that would be
             /// needed for like  every possible function/transform
@@ -168,7 +173,8 @@ namespace obfuscator {
                     }
                 }
 
-                /// ...
+                /// Increment progress bar
+                progress.step();
             }
 
             /// We are done here
@@ -178,14 +184,12 @@ namespace obfuscator {
     template <pe::any_image_t Img>
     void Instance<Img>::assemble() {
         /// Estimating section size
+        auto size_estimation_progress = util::Progress("obfuscator: estimating section size", functions_.size());
         std::size_t section_size = 0;
         for (auto& func : functions_) {
-            /// Debug dump the obfuscated routine if needed
-            // logger::info("Program:");
-            // easm::dump_program(*func.program);
-
             const auto program_size = easm::estimate_program_size(*func.analysed.program);
             section_size += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
+            size_estimation_progress.step();
         }
         logger::debug("assemble: estimated new section size: {:#x}", section_size);
 
@@ -195,6 +199,7 @@ namespace obfuscator {
         memory::address virt_address = new_sec.virtual_address;
 
         /// Iterate over the obfuscated functions
+        auto linking_progress = util::Progress("obfuscator: linking functions", functions_.size());
         for (auto& [func, _] : functions_) {
             /// \todo @es3n1n: perhaps i should split this monstrosity into a separate functions
 
@@ -229,7 +234,9 @@ namespace obfuscator {
             std::memcpy(func_start_ptr, jmp_data->data(), jmp_data->size());
 
             /// Assemble the obfuscated function
+            auto assemble_progress = util::Progress(std::format("obfuscator: assembling {}", func.parsed_func.name), 1);
             const auto assembled = easm::assemble_program(virt_address + img_base, *func.program);
+            assemble_progress.step();
 
             /// Copy fresh new assembled function
             std::memcpy( //
@@ -264,6 +271,9 @@ namespace obfuscator {
             /// Align size and increment offset
             const auto aligned_size = memory::address{assembled.data.size()}.align_up(kTextSectionAlignment).as<std::size_t>();
             virt_address = virt_address.offset(aligned_size);
+
+            /// Increment progress bar
+            linking_progress.step();
         }
 
         logger::info("assemble: assembled {} functions", functions_.size());
