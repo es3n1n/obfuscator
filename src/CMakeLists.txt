@@ -102,6 +102,7 @@ set(obfuscator-lib_SOURCES
 	"lib/util/platform.hpp"
 	"lib/util/random.hpp"
 	"lib/util/sections.hpp"
+	"lib/util/stopwatch.hpp"
 	"lib/util/string_parser.hpp"
 	"lib/util/structs.hpp"
 	"lib/util/types.hpp"
