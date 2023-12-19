@@ -100,6 +100,7 @@ set(obfuscator-lib_SOURCES
 	"lib/util/memory/reader.hpp"
 	"lib/util/passes.hpp"
 	"lib/util/platform.hpp"
+	"lib/util/progress.hpp"
 	"lib/util/random.hpp"
 	"lib/util/sections.hpp"
 	"lib/util/stopwatch.hpp"
