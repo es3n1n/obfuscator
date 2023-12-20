@@ -31,6 +31,7 @@ link-libraries = ["obfuscator::lib"]
 
 
 [target.obfuscator-tests]
+condition = "build-tests"
 type = "obfuscator-executable"
 sources = ["tests/**.cpp", "tests/**.hpp"]
 include-directories = ["tests/"]

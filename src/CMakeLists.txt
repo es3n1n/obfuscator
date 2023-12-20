@@ -182,74 +182,76 @@ if(NOT CMKR_VS_STARTUP_PROJECT)
 endif()
 
 # Target: obfuscator-tests
-set(obfuscator-tests_SOURCES
-	"tests/analysis/bb_decomp/bb_decomp.llvm.cpp"
-	"tests/analysis/bb_decomp/bb_decomp.msvc.cpp"
-	"tests/func_parser/map/map.ida.cpp"
-	"tests/func_parser/map/map.llvm.cpp"
-	"tests/func_parser/map/map.msvc.cpp"
-	"tests/func_parser/pdb/pdb.llvm.cpp"
-	"tests/func_parser/pdb/pdb.msvc.cpp"
-	"tests/tests_util.hpp"
-	cmake.toml
-)
-
-add_executable(obfuscator-tests)
-
-target_sources(obfuscator-tests PRIVATE ${obfuscator-tests_SOURCES})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-tests_SOURCES})
-
-target_compile_definitions(obfuscator-tests PRIVATE
-	NOMINMAX
-)
-
-target_compile_features(obfuscator-tests PRIVATE
-	cxx_std_23
-)
-
-if(UNIX) # unix
-	target_compile_options(obfuscator-tests PRIVATE
-		-stdlib=libc++
+if(OBFUSCATOR_BUILD_TESTS) # build-tests
+	set(obfuscator-tests_SOURCES
+		"tests/analysis/bb_decomp/bb_decomp.llvm.cpp"
+		"tests/analysis/bb_decomp/bb_decomp.msvc.cpp"
+		"tests/func_parser/map/map.ida.cpp"
+		"tests/func_parser/map/map.llvm.cpp"
+		"tests/func_parser/map/map.msvc.cpp"
+		"tests/func_parser/pdb/pdb.llvm.cpp"
+		"tests/func_parser/pdb/pdb.msvc.cpp"
+		"tests/tests_util.hpp"
+		cmake.toml
 	)
-endif()
 
-if(MSVC) # msvc
-	target_compile_options(obfuscator-tests PRIVATE
-		"/wd4661"
-		"/MP"
+	add_executable(obfuscator-tests)
+
+	target_sources(obfuscator-tests PRIVATE ${obfuscator-tests_SOURCES})
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-tests_SOURCES})
+
+	target_compile_definitions(obfuscator-tests PRIVATE
+		NOMINMAX
 	)
-endif()
 
-if(UNIX) # unix
-	target_link_options(obfuscator-tests PRIVATE
-		-fuse-ld=lld
-		"-Wl,-L/usr/local/lib/"
+	target_compile_features(obfuscator-tests PRIVATE
+		cxx_std_23
 	)
+
+	if(UNIX) # unix
+		target_compile_options(obfuscator-tests PRIVATE
+			-stdlib=libc++
+		)
+	endif()
+
+	if(MSVC) # msvc
+		target_compile_options(obfuscator-tests PRIVATE
+			"/wd4661"
+			"/MP"
+		)
+	endif()
+
+	if(UNIX) # unix
+		target_link_options(obfuscator-tests PRIVATE
+			-fuse-ld=lld
+			"-Wl,-L/usr/local/lib/"
+		)
+	endif()
+
+	target_include_directories(obfuscator-tests PRIVATE
+		"tests/"
+	)
+
+	target_link_libraries(obfuscator-tests PRIVATE
+		obfuscator::lib
+		GTest::gtest_main
+	)
+
+	set_target_properties(obfuscator-tests PROPERTIES
+		PROJECT_LABEL
+			tests
+	)
+
+	get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINITION VS_STARTUP_PROJECT)
+	if(NOT CMKR_VS_STARTUP_PROJECT)
+		set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT obfuscator-tests)
+	endif()
+
+	set(CMKR_TARGET obfuscator-tests)
+	FetchContent_MakeAvailable(resources)
+	target_compile_definitions(obfuscator-tests PRIVATE OBFUSCATOR_RESOURCES_PATH="${resources_SOURCE_DIR}")
+
 endif()
-
-target_include_directories(obfuscator-tests PRIVATE
-	"tests/"
-)
-
-target_link_libraries(obfuscator-tests PRIVATE
-	obfuscator::lib
-	GTest::gtest_main
-)
-
-set_target_properties(obfuscator-tests PROPERTIES
-	PROJECT_LABEL
-		tests
-)
-
-get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINITION VS_STARTUP_PROJECT)
-if(NOT CMKR_VS_STARTUP_PROJECT)
-	set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT obfuscator-tests)
-endif()
-
-set(CMKR_TARGET obfuscator-tests)
-FetchContent_MakeAvailable(resources)
-target_compile_definitions(obfuscator-tests PRIVATE OBFUSCATOR_RESOURCES_PATH="${resources_SOURCE_DIR}")
-
 enable_testing()
 
 if(OBFUSCATOR_BUILD_TESTS) # build-tests
