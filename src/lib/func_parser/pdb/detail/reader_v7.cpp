@@ -19,6 +19,10 @@ namespace func_parser::pdb::detail {
             stream_dir.reserve(block_count * block_size);
 
             const auto* block_id_array = raw.offset(block_size * header->BlockMapAddr).cast<uint32_t*>();
+            if (block_id_array == nullptr) [[unlikely]] {
+                throw std::runtime_error("infer was right");
+            }
+
             for (uint32_t i = 0; i < block_count; ++i) {
                 const auto block = raw.offset(block_size * block_id_array[i]);
                 stream_dir.insert(stream_dir.end(), block.cast<uint8_t*>(), //
@@ -58,6 +62,10 @@ namespace func_parser::pdb::detail {
 
         const auto* streams = memory::address{stream_directory.data()}.offset(sizeof(std::uint32_t)).cast<std::uint32_t*>();
         const auto* ids = memory::address{streams}.offset(static_cast<std::ptrdiff_t>(streams_count) * sizeof(std::uint32_t)).cast<std::uint32_t*>();
+
+        if (streams == nullptr) [[unlikely]] {
+            throw std::runtime_error("infer was right (2)");
+        }
 
         streams_.clear();
         streams_.reserve(streams_count);
