@@ -92,7 +92,7 @@ namespace logger {
                 // Obtaining current console mode
                 //
                 DWORD console_flags = 0;
-                if (!GetConsoleMode(console_handle, &console_flags)) [[unlikely]] {
+                if (GetConsoleMode(console_handle, &console_flags) == 0) [[unlikely]] {
                     // wtf? ok lets pray ansi codes would work lol.
                     return;
                 }
