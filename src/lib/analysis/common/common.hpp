@@ -321,7 +321,7 @@ namespace analysis {
 
         std::shared_ptr<insn_t> push_insn(zasm::Node* insn_node_ptr, const bb_provider_t* bb_provider, const std::optional<rva_t> rva = std::nullopt,
                                           const std::optional<std::uint8_t> size = std::nullopt,
-                                          const std::optional<decltype(instructions)::iterator> at = std::nullopt) {
+                                          const std::optional<decltype(instructions)::iterator>& at = std::nullopt) {
             assert(bb_provider != nullptr);
 
             /// We are storing only instructions

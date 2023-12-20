@@ -66,7 +66,7 @@ namespace analysis {
             });
 
             /// util
-            auto insert_to = [this, node](bb_t* bb, const decltype(bb->instructions)::iterator at) -> void {
+            auto insert_to = [this, node](bb_t* bb, const decltype(bb->instructions)::iterator& at) -> void {
                 bb->push_insn(node, bb_provider_.get(), std::nullopt, std::nullopt, at);
             };
 

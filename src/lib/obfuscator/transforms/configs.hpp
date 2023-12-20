@@ -281,7 +281,7 @@ namespace obfuscator {
             /// \brief Var name
             std::string name_ = {};
             /// \brief Short description (1 line max)
-            std::optional<std::string> short_description_ = "";
+            std::optional<std::string> short_description_ = std::nullopt;
             /// \brief Is var required to set by user
             bool required_ = false;
             /// \brief Variable type, either global or per function
@@ -339,7 +339,7 @@ namespace obfuscator {
         /// \brief Reset all config vars to their default values
         /// \param type type of vars that it should reset
         void reset_vars(const Var::Type type) {
-            for (auto& [_, var] : variables_) {
+            for (auto& var : std::views::values(variables_)) {
                 if (var.var_type() != type) {
                     continue;
                 }

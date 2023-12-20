@@ -48,7 +48,7 @@ namespace analysis::bb_decomp {
         // Label finder
         bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
             // Searching in basic blocks with rvas first
-            for (auto& [_, bb] : basic_blocks_) {
+            for (auto& bb : std::views::values(basic_blocks_)) {
                 if (!bb->contains_label(label->getId())) {
                     continue;
                 }
@@ -183,7 +183,7 @@ namespace analysis::bb_decomp {
 
         /// Collect all the current instructions that should be present within this program
         std::unordered_map<insn_t*, bb_t*> insns = {};
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             for (auto& insn : *bb) {
                 insns[insn.get()] = bb.get();
             }
@@ -359,7 +359,7 @@ namespace analysis::bb_decomp {
             }
 
             auto& last_insn = bb->instructions.at(bb->size() - 1);
-            const auto last_mnemonic = last_insn.get()->ref->getMnemonic().value();
+            const auto last_mnemonic = last_insn->ref->getMnemonic().value();
 
             /// Looks legit, i think?
             if (last_mnemonic == ZYDIS_MNEMONIC_JMP || last_mnemonic == ZYDIS_MNEMONIC_RET) {
@@ -439,7 +439,7 @@ namespace analysis::bb_decomp {
         logger::debug("bb_decomp: updating rescheduled CF..");
 
         /// Iterating over the all basic blocks
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             /// Trying to find the insn with CF changers
             const auto& last_insn = bb->instructions.at(bb->size() - 1);
 
@@ -494,7 +494,7 @@ namespace analysis::bb_decomp {
 
         /// Step 0. Clear all predecessors info
         /// We cannot do this in the Step 1
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             bb->predecessors.clear();
         }
 
@@ -569,7 +569,7 @@ namespace analysis::bb_decomp {
     void Instance<Img>::dump() {
         logger::info("-- Basic blocks for function {:#x}", function_start_);
 
-        for (auto& [_, v] : basic_blocks_) {
+        for (auto& v : std::views::values(basic_blocks_)) {
             debug::dump_bb(*v);
         }
 
@@ -581,7 +581,7 @@ namespace analysis::bb_decomp {
         const auto path = std::filesystem::path(R"(E:\local-projects\obfuscator\scripts\bb_preview\data\)");
         int iter = 0;
 
-        for (auto& [_, basic_block] : basic_blocks_) {
+        for (auto& basic_block : std::views::values(basic_blocks_)) {
             debug::serialize_bb_to_file(*basic_block, path / (std::to_string(iter) + ".bb"));
             iter += 1;
         }

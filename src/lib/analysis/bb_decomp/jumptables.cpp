@@ -9,7 +9,7 @@ namespace analysis::bb_decomp {
     void Instance<Img>::collect_jumptables() {
         const auto machine_mode = image_->guess_machine_mode();
 
-        for (auto& [_, basic_block] : basic_blocks_) {
+        for (auto& basic_block : std::views::values(basic_blocks_)) {
             for (std::size_t i = 0; i < basic_block->size(); ++i) {
                 const auto& insn = basic_block->instructions.at(i);
 

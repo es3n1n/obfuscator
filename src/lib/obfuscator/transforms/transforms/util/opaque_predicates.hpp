@@ -870,7 +870,6 @@ namespace obfuscator::transform_util {
 
         default:
             throw std::runtime_error("gen_predicate: invalid random index");
-        };
+        }
     }
-
 } // namespace obfuscator::transform_util
