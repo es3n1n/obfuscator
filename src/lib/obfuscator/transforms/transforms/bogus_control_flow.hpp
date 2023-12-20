@@ -52,7 +52,7 @@ namespace obfuscator::transforms {
                 /// Generating a BCF stub
                 transform_util::generate_bogus_confrol_flow<Img>(
                     function, bb.get(),
-                    [&](const std::shared_ptr<analysis::bb_t>& new_bb) -> void {
+                    [&](const analysis::bb_t* new_bb) -> void {
                         /// Tamper data if needed
                         switch (mode) { // NOLINT
                         case Mode::OPAQUE_PREDICATES:
@@ -81,7 +81,7 @@ namespace obfuscator::transforms {
         }
 
     private:
-        static void tamper_instructions(Function<Img>* function, const std::shared_ptr<analysis::bb_t>& bb) {
+        static void tamper_instructions(Function<Img>* function, const analysis::bb_t* bb) {
             /// Iterating over the copied instructions
             for (const auto& insn : bb->instructions) {
                 /// Skip instructions that affect IP
