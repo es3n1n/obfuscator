@@ -52,9 +52,9 @@ namespace obfuscator::transforms {
                 /// Generating a BCF stub
                 transform_util::generate_bogus_confrol_flow<Img>(
                     function, bb.get(),
-                    [&](std::shared_ptr<analysis::bb_t> new_bb) -> void {
+                    [&](const analysis::bb_t* new_bb) -> void {
                         /// Tamper data if needed
-                        switch (mode) {
+                        switch (mode) { // NOLINT
                         case Mode::OPAQUE_PREDICATES:
                             tamper_instructions(function, new_bb);
                             break;
@@ -81,7 +81,7 @@ namespace obfuscator::transforms {
         }
 
     private:
-        static void tamper_instructions(Function<Img>* function, std::shared_ptr<analysis::bb_t> bb) {
+        static void tamper_instructions(Function<Img>* function, const analysis::bb_t* bb) {
             /// Iterating over the copied instructions
             for (const auto& insn : bb->instructions) {
                 /// Skip instructions that affect IP
@@ -102,7 +102,7 @@ namespace obfuscator::transforms {
                     }
 
                     /// Tamper reg
-                    if (auto* op_reg = insn->ref->template getOperandIf<zasm::Reg>(i)) {
+                    if (const auto* op_reg = insn->ref->template getOperandIf<zasm::Reg>(i)) {
                         insn->ref->setOperand(i, function->lru_reg.get_for_bits(op_reg->getBitSize(function->machine_mode), true));
                     }
 
@@ -114,7 +114,7 @@ namespace obfuscator::transforms {
             }
         }
 
-        static void gen_random_predicate(zasm::x86::Assembler* as, zasm::Label successor_label, zasm::Label dead_branch_label,
+        static void gen_random_predicate(zasm::x86::Assembler* as, const zasm::Label successor_label, const zasm::Label dead_branch_label,
                                          analysis::VarAlloc<Img>& var_alloc, const std::size_t expr_size) {
             /// Generate the expr, alloc x
             auto expr = mathop::ExpressionGenerator::get().generate(zasm::BitSize::_32, expr_size);

@@ -9,7 +9,7 @@ namespace analysis::bb_decomp {
     void Instance<Img>::collect_jumptables() {
         const auto machine_mode = image_->guess_machine_mode();
 
-        for (auto& [_, basic_block] : basic_blocks_) {
+        for (auto& basic_block : std::views::values(basic_blocks_)) {
             for (std::size_t i = 0; i < basic_block->size(); ++i) {
                 const auto& insn = basic_block->instructions.at(i);
 
@@ -27,7 +27,7 @@ namespace analysis::bb_decomp {
                 /// Init the jumptable info
                 auto jump_table = jump_table_t{};
                 jump_table.bb = basic_block;
-                jump_table.jmp_at = basic_block->instructions.begin() + i;
+                jump_table.jmp_at = basic_block->instructions.begin() + static_cast<std::ptrdiff_t>(i);
 
                 /// Now we need find its table ptr, we are gonna do this by iterating back and
                 /// matching the load_index and/or base_move
@@ -62,7 +62,7 @@ namespace analysis::bb_decomp {
 
                         /// Yay.
                         jump_table.jump_table_rva = std::make_optional(mem->getDisplacement());
-                        jump_table.index_load_at = basic_block->begin() + j;
+                        jump_table.index_load_at = basic_block->begin() + static_cast<std::ptrdiff_t>(j);
                     };
 
                     auto match_base_move = [&]() -> void {
@@ -102,7 +102,7 @@ namespace analysis::bb_decomp {
                             return;
                         }
 
-                        jump_table.base_move_at = basic_block->begin() + j;
+                        jump_table.base_move_at = basic_block->begin() + static_cast<std::ptrdiff_t>(j);
                     };
 
                     match_load_index();
@@ -238,7 +238,7 @@ namespace analysis::bb_decomp {
             /// Emit the lea instead
             assembler_->lea(jmp_reg, mem_op);
             auto last_node = assembler_->getCursor();
-            push_last_instruction(*info.bb);
+            (void)push_last_instruction(*info.bb);
 
             /// Current bb that it should treat as predecessor
             auto current_bb = *info.bb;

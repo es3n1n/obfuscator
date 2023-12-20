@@ -24,3 +24,7 @@ samples/
 *.id2
 *.nam
 *.til
+
+# infer
+infer-out/**
+cmake/infer-build

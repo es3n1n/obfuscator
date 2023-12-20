@@ -12,7 +12,7 @@ namespace pe::detail {
         }
     } // namespace
 
-    void update_checksum(ImgWrapped image, std::vector<std::uint8_t>& data) {
+    void update_checksum(const ImgWrapped image, std::vector<std::uint8_t>& data) {
         return UNWRAP_IMAGE(void, update_checksum_);
     }
 } // namespace pe::detail

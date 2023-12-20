@@ -11,10 +11,8 @@ namespace obfuscator::transform_util {
     /// \param post_generation_callback Post generation callback (to tamper instructions or something)
     /// \param predicate_generator Predicate generator
     template <pe::any_image_t Img>
-    void generate_bogus_confrol_flow(
-        Function<Img>* function, analysis::bb_t* bb,
-        const std::function<void(std::shared_ptr<analysis::bb_t>)>& post_generation_callback,
-        std::function<void(zasm::x86::Assembler*, zasm::Label, zasm::Label, analysis::VarAlloc<Img>*)> predicate_generator) {
+    void generate_bogus_confrol_flow(Function<Img>* function, analysis::bb_t* bb, const std::function<void(analysis::bb_t*)>& post_generation_callback,
+                                     std::function<void(zasm::x86::Assembler*, zasm::Label, zasm::Label, analysis::VarAlloc<Img>*)> predicate_generator) {
 
         /// Get the last non-jmp insn
         auto last_insn = bb->last_non_jmp_insn(function->program.get(), true);
@@ -36,14 +34,17 @@ namespace obfuscator::transform_util {
         /// Temporary disable oserver
         function->observer->stop();
 
-        /// Create dead branch
+        /// Setup dead branch
         as = *function->cursor->after(last_insn->node_ref);
         as->bind(dummy_bb_label);
+        auto label_node = as->getCursor();
+
+        /// Create dead branch
         auto new_bb = function->bb_storage->copy_bb(successor, as, function->program.get(), function->bb_provider.get());
-        new_bb->push_label(as->getCursor(), function->bb_provider.get());
+        new_bb->push_label(label_node, function->bb_provider.get());
 
         /// Tamper instructions, if needed
-        post_generation_callback(new_bb);
+        post_generation_callback(new_bb.get());
 
         /// Re-enable observer
         function->observer->start();

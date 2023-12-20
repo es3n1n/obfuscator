@@ -7,7 +7,7 @@ namespace obfuscator {
     /// \tparam Img PE Image type, either x64 or x86
     template <pe::any_image_t Img>
     struct Function {
-        DEFAULT_CTOR_DTOR(Function);
+        DEFAULT_DTOR(Function);
         NON_COPYABLE(Function);
         Function(const analysis::Function<Img>& func, const Img* image)
             : parsed_func(func.parsed_func), lru_reg(func.lru_reg), bb_storage(func.bb_storage), program(func.program), assembler(func.assembler),

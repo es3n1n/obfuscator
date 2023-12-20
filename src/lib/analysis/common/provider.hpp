@@ -13,7 +13,7 @@ namespace analysis {
         /// \param va virtual address
         /// \param callee basic block callee
         /// \return optional bb ref
-        [[nodiscard]] ResultTy find_by_start_va(rva_t va, bb_t* callee) const override {
+        [[nodiscard]] ResultTy find_by_start_va(const rva_t va, bb_t* callee) const override {
             assert(find_by_start_va_.has_value());
             return (*find_by_start_va_)(va, callee);
         }
@@ -22,7 +22,7 @@ namespace analysis {
         /// \param rva relative virtual address
         /// \param callee basic block callee
         /// \return optional bb ref
-        [[nodiscard]] ResultTy find_by_start_rva(rva_t rva, bb_t* callee) const override {
+        [[nodiscard]] ResultTy find_by_start_rva(const rva_t rva, bb_t* callee) const override {
             assert(find_by_start_rva_.has_value());
             return (*find_by_start_rva_)(rva, callee);
         }

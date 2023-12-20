@@ -15,7 +15,7 @@ namespace memory {
             return std::unexpected(e_error_code::INVALID_PARAMETERS);
         }
 
-        auto trivial_copy = [&buffer, &address]<typename T>(T unused_var [[maybe_unused]]) -> void {
+        auto trivial_copy = [&buffer, &address]<typename T>(T) -> void {
             *static_cast<T*>(buffer) = *reinterpret_cast<T*>(address);
         };
 
@@ -50,7 +50,7 @@ namespace memory {
             return std::unexpected(e_error_code::INVALID_PARAMETERS);
         }
 
-        auto trivial_copy = [&buffer, &address]<typename T>(T unused_var [[maybe_unused]]) -> void {
+        auto trivial_copy = [&buffer, &address]<typename T>(T) -> void {
             // NOLINTNEXTLINE
             *reinterpret_cast<T*>(address) = *static_cast<T*>(const_cast<void*>(buffer));
         };

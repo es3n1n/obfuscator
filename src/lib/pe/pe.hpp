@@ -54,7 +54,7 @@ namespace pe {
         section_t& new_section(std::string_view name, std::size_t size, //
                                win::section_characteristics_t characteristics);
 
-        void realign_sections();
+        void realign_sections() const;
 
         [[nodiscard]] section_t* rva_to_section(std::uint32_t rva) const;
 

@@ -27,7 +27,7 @@ namespace analysis {
         };
 
         std::shared_ptr<bb_t> bb;
-        e_type type;
+        e_type type = e_type::JMP;
 
         /// Set to true if we were unable to find the next node.
         bool rescheduled = false;
@@ -153,7 +153,7 @@ namespace analysis {
         // Util to find first op of type
         //
         template <typename Ty>
-        std::optional<std::size_t> find_operand_index_if() const {
+        [[nodiscard]] std::optional<std::size_t> find_operand_index_if() const {
             // Iterating over operands and trying to get it as our type
             //
             for (std::size_t i = 0; i < ref->getOperandCount(); ++i) {
@@ -321,7 +321,7 @@ namespace analysis {
 
         std::shared_ptr<insn_t> push_insn(zasm::Node* insn_node_ptr, const bb_provider_t* bb_provider, const std::optional<rva_t> rva = std::nullopt,
                                           const std::optional<std::uint8_t> size = std::nullopt,
-                                          const std::optional<decltype(instructions)::iterator> at = std::nullopt) {
+                                          const std::optional<decltype(instructions)::iterator>& at = std::nullopt) {
             assert(bb_provider != nullptr);
 
             /// We are storing only instructions
@@ -379,7 +379,7 @@ namespace analysis {
                     ref_it.rescheduled = true;
                     ref_it.rescheduled_va = rescheduled_va;
                 };
-                auto push_cf_changer = [&it, reschedule](const cf_direction_t::e_type ref_type, const std::optional<std::shared_ptr<bb_t>> bb_ref,
+                auto push_cf_changer = [&it, reschedule](const cf_direction_t::e_type ref_type, const std::optional<std::shared_ptr<bb_t>>& bb_ref,
                                                          const std::optional<rva_t> va = std::nullopt) -> void {
                     if (!bb_ref.has_value()) {
                         // This is bad. Let's reschedule it
@@ -499,6 +499,10 @@ namespace analysis {
             }
 
             throw std::runtime_error(std::format("last_non_jmp_insn: unable to query ({})", static_cast<int>(include_conditional_jmps)));
+        }
+
+        [[nodiscard]] bool contains_label(const zasm::Label::Id label_id) const {
+            return labels.contains(label_id);
         }
 
         void clear() {
@@ -634,7 +638,7 @@ namespace analysis {
     /// \fixme @es3n1n: MOVE THIS STUFF TO .cpp!
     [[nodiscard]] inline std::shared_ptr<bb_t> insn_t::linear_successor() const {
         if (is_jump()) {
-            auto it = std::ranges::find_if(cf, [](auto& pred) -> bool {
+            const auto it = std::ranges::find_if(cf, [](auto& pred) -> bool {
                 return pred.type == cf_direction_t::e_type::JCC_CONDITION_NOT_MET || pred.type == cf_direction_t::e_type::JMP;
             });
             return it->bb;
@@ -671,7 +675,7 @@ namespace analysis {
         }
 
         void iter_bbs(const std::function<void(bb_t&)>& callback) {
-            std::ranges::for_each(basic_blocks, [callback](const std::shared_ptr<bb_t>& value) -> void { callback(*value.get()); });
+            std::ranges::for_each(basic_blocks, [callback](const std::shared_ptr<bb_t>& value) -> void { callback(*value); });
         }
 
         void iter_insns(const std::function<void(insn_t&)>& callback) {
@@ -681,7 +685,7 @@ namespace analysis {
         }
 
         /// Don't forget to stop the observer, i guess? (fixme)
-        [[nodiscard]] std::shared_ptr<bb_t> copy_bb(std::shared_ptr<bb_t> bb, zasm::x86::Assembler* as, zasm::Program* program,
+        [[nodiscard]] std::shared_ptr<bb_t> copy_bb(const std::shared_ptr<bb_t>& bb, zasm::x86::Assembler* as, zasm::Program* program,
                                                     const bb_provider_t* provider) {
             /// Alloc bb
             auto new_bb = std::make_shared<bb_t>(bb->machine_mode);
@@ -705,8 +709,11 @@ namespace analysis {
                 auto label_node = program->bindLabel(label);
                 assert(label_node.hasValue());
 
-                /// Insert label, jmp to it
+                /// Insert label, remember it
                 program->insertBefore(successor->node_at(0), label_node.value());
+                successor->push_label(label_node.value(), provider);
+
+                /// Jmp to the successor
                 as->jmp(label);
                 bb->push_insn(as->getCursor(), provider);
             }
@@ -714,19 +721,19 @@ namespace analysis {
             return new_bb;
         }
 
-        auto begin() {
+        [[nodiscard]] auto begin() {
             return iterator(basic_blocks.begin());
         }
 
-        auto begin() const {
+        [[nodiscard]] auto begin() const {
             return const_iterator(basic_blocks.begin());
         }
 
-        auto end() {
+        [[nodiscard]] auto end() {
             return iterator(basic_blocks.end());
         }
 
-        auto end() const {
+        [[nodiscard]] auto end() const {
             return const_iterator(basic_blocks.end());
         }
 

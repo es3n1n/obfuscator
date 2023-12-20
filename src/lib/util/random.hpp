@@ -11,7 +11,7 @@ namespace rnd {
     namespace detail {
         /// We are gonna use the mersenne twister prng because its pretty convenient
         /// and its already present in std
-        inline std::mt19937_64 prng = {};
+        inline std::mt19937_64 prng = {}; // NOLINT
 
         /// \brief Set the MT seed
         /// \param seed seed to set

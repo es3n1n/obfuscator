@@ -18,11 +18,6 @@ namespace func_parser::map {
             // NOLINTNEXTLINE
             return std::stoull(value, nullptr, 16);
         }
-
-        std::uint32_t parse_decimal_string(const std::string& value) {
-            // NOLINTNEXTLINE
-            return std::stoul(value, nullptr, 10);
-        }
     } // namespace
 
     function_list_t discover_functions(const std::filesystem::path& map_path, const std::vector<pe::section_t>& sections) {
@@ -86,7 +81,7 @@ namespace func_parser::map {
             }
             section_index -= 1;
             assert(section_index < sections.size());
-            const auto section = sections.at(section_index);
+            const auto& section = sections.at(section_index);
             const auto section_offset = parse_hex_string(matches[2]);
             const auto name = matches[3];
 

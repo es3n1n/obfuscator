@@ -63,7 +63,7 @@ namespace obfuscator::transforms {
                 /// Uh oh, we don't know how to process other stuff (fixme)
                 if (*sp_mem == nullptr || //
                     !easm::is_sp(function->machine_mode, (*sp_mem)->getBase())) {
-                    logger::warn("constant_crypt: not sure how to process SP at {:#x}", *insn->rva);
+                    // logger::warn("constant_crypt: not sure how to process SP at {:#x}", insn->rva.value_or(0));
                     return;
                 }
             }

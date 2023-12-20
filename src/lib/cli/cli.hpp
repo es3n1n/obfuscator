@@ -5,6 +5,17 @@
 
 namespace cli {
     namespace detail {
+        /// { { name, arg1, arg2 }, description }
+        constexpr auto kCLIOptionsHelp = std::to_array<std::pair<std::array<std::string_view, 3>, std::string_view>>({
+            {{"-h, --help", "", ""}, "This message"},
+            {{"-pdb", "[path]", ""}, "Set custom .pdb file location"},
+            {{"-map", "[path]", ""}, "Set custom .map file location"},
+            {{"-f", "[name]", ""}, "Start new function configuration"},
+            {{"-t", "[name]", ""}, "Start new transform configuration"},
+            {{"-g", "[name]", ""}, "Start new transform global configuration"},
+            {{"-v", "[name]", "[value]"}, "Push value"},
+        });
+
         template <pe::any_image_t Img>
         void dump_transforms(const std::string_view platform_name) {
             /// Header
@@ -62,16 +73,7 @@ namespace cli {
         pad();
 
         logger::info("Available options:");
-        std::vector<std::pair<std::array<std::string, 3>, std::string>> options = {
-            {{"-h, --help", "", ""}, "This message"},
-            {{"-pdb", "[path]", ""}, "Set custom .pdb file location"},
-            {{"-map", "[path]", ""}, "Set custom .map file location"},
-            {{"-f", "[name]", ""}, "Start new function configuration"},
-            {{"-t", "[name]", ""}, "Start new transform configuration"},
-            {{"-g", "[name]", ""}, "Start new transform global configuration"},
-            {{"-v", "[name]", "[value]"}, "Push value"},
-        };
-        for (auto& [args, desc] : options) {
+        for (auto& [args, desc] : detail::kCLIOptionsHelp) {
             logger::info<1>("{:<12} {:<6} {:<8} -- {}", args[0], args[1], args[2], desc);
         }
         pad();

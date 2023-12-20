@@ -63,8 +63,8 @@ namespace analysis::bb_decomp {
         void collect_jumptable_entries();
         void expand_jumptables();
 
-        std::shared_ptr<bb_t> make_successor(const rva_t successor, bb_t* predecessor) {
-            auto predecssor_ref = bb_provider_->acquire_ref(predecessor);
+        std::shared_ptr<bb_t> make_successor(const rva_t successor, const bb_t* predecessor) {
+            const auto predecssor_ref = bb_provider_->acquire_ref(predecessor);
             assert(predecssor_ref.has_value());
             return make_successor(successor, predecssor_ref.value());
         }
@@ -124,12 +124,13 @@ namespace analysis::bb_decomp {
             basic_block->push_last_N_insns(assembler_.get(), bb_provider_.get(), count);
         }
 
-        std::shared_ptr<insn_t> push_last_instruction(const std::shared_ptr<bb_t>& basic_block, const std::optional<rva_t> rva = std::nullopt,
-                                                      const std::optional<std::uint8_t> size = std::nullopt) const {
+        [[nodiscard]] std::shared_ptr<insn_t> push_last_instruction(const std::shared_ptr<bb_t>& basic_block,
+                                                                    const std::optional<rva_t> rva = std::nullopt,
+                                                                    const std::optional<std::uint8_t> size = std::nullopt) const {
             return basic_block->push_insn(assembler_->getCursor(), bb_provider_.get(), rva, size);
         }
 
-        std::shared_ptr<label_t> push_last_label(const std::shared_ptr<bb_t>& basic_block) const {
+        [[nodiscard]] std::shared_ptr<label_t> push_last_label(const std::shared_ptr<bb_t>& basic_block) const {
             return basic_block->push_label(assembler_->getCursor(), bb_provider_.get());
         }
 

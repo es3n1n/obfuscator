@@ -23,7 +23,7 @@ namespace analysis {
             bb_provider = std::make_shared<functional_bb_provider_t>();
 
             /// Set RVA finder
-            bb_provider->set_rva_finder([storage = bb_storage.get()](const rva_t rva, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
+            bb_provider->set_rva_finder([storage = bb_storage.get()](const rva_t rva, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
                 /// Find by RVA
                 auto it = std::ranges::find_if(storage->basic_blocks, [rva](auto&& bb) -> bool {
                     return bb->start_rva.has_value() && bb->start_rva.value() == rva; //
@@ -41,10 +41,10 @@ namespace analysis {
             });
 
             /// Set Label finder
-            bb_provider->set_label_finder([storage = bb_storage.get()](const zasm::Label* label, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
+            bb_provider->set_label_finder([storage = bb_storage.get()](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
                 for (auto& bb : storage->basic_blocks) {
-                    auto it = bb->labels.find(label->getId());
-                    if (it != std::end(bb->labels)) {
+                    /// Continue if bb doesn't contain this label
+                    if (!bb->contains_label(label->getId())) {
                         continue;
                     }
 

@@ -10,7 +10,6 @@ namespace obfuscator {
             CHANCE = 0,
             REPEAT_TIMES = 1,
         };
-
         inline std::array kSharedConfigsVariableNames = {"chance", "repeat"};
     } // namespace detail
 
@@ -62,23 +61,24 @@ namespace obfuscator {
         /// \param override_default Should we override the default value too?
         /// \return true on success, false on failure
         bool try_load(const std::string_view name, const std::string_view value, const bool override_default = false) noexcept {
-            static std::unordered_map<std::string, std::function<void()>> callbacks = {};
+            static std::unordered_map<std::string, std::function<void(TransformSharedConfig*, std::string_view, bool)>> callbacks = {};
 
             /// A little bit of overhead with this once flag, but now the init looks n i c e
             static std::once_flag fl;
-            std::call_once(fl, [&]() -> void {
-                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [&] {
-                    chance(util::string::parse_uint8(value), override_default);
+            std::call_once(fl, []() -> void {
+                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [](auto* instance_, const auto value_, const auto override_default_) {
+                    instance_->chance(util::string::parse_uint8(value_), override_default_);
                 };
 
-                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [&] {
-                    repeat_times(util::string::parse_uint8(value), override_default);
+                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [](auto* instance_, const auto value_,
+                                                                                          const auto override_default_) {
+                    instance_->repeat_times(util::string::parse_uint8(value_), override_default_);
                 };
             });
 
             /// Try to find the loader, and load if found
             if (const auto it = callbacks.find(name.data()); it != std::end(callbacks)) {
-                it->second();
+                it->second(this, value, override_default);
                 return true;
             }
 
@@ -279,9 +279,9 @@ namespace obfuscator {
             /// \brief First value holder
             std::any default_value_ = {};
             /// \brief Var name
-            std::string name_ = "";
+            std::string name_ = {};
             /// \brief Short description (1 line max)
-            std::optional<std::string> short_description_ = "";
+            std::optional<std::string> short_description_ = std::nullopt;
             /// \brief Is var required to set by user
             bool required_ = false;
             /// \brief Variable type, either global or per function
@@ -339,7 +339,7 @@ namespace obfuscator {
         /// \brief Reset all config vars to their default values
         /// \param type type of vars that it should reset
         void reset_vars(const Var::Type type) {
-            for (auto& [_, var] : variables_) {
+            for (auto& var : std::views::values(variables_)) {
                 if (var.var_type() != type) {
                     continue;
                 }

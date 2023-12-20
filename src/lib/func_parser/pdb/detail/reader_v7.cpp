@@ -19,6 +19,7 @@ namespace func_parser::pdb::detail {
             stream_dir.reserve(block_count * block_size);
 
             const auto* block_id_array = raw.offset(block_size * header->BlockMapAddr).cast<uint32_t*>();
+
             for (uint32_t i = 0; i < block_count; ++i) {
                 const auto block = raw.offset(block_size * block_id_array[i]);
                 stream_dir.insert(stream_dir.end(), block.cast<uint8_t*>(), //

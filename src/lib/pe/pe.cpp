@@ -74,6 +74,7 @@ namespace pe {
         // Reserving section size
         //
         new_sec.raw_data.resize(size, 0);
+        assert(size > 0);
 
         // Obtaining last section
         //
@@ -106,7 +107,7 @@ namespace pe {
     }
     
     template <any_raw_image_t Img>
-    void Image<Img>::realign_sections() {
+    void Image<Img>::realign_sections() const {
         /// Nothing to realign
         if (sections.size() <= 1) {
             return;
@@ -115,7 +116,7 @@ namespace pe {
         /// Making sure that all section virtual sizes are aligned
         for (std::size_t i = 0; i < sections.size() - 1; ++i) {
             auto& sec = sections.at(i);
-            auto& next_sec = sections.at(i + 1);
+            const auto& next_sec = sections.at(i + 1);
 
             sec.virtual_size = next_sec.virtual_address - sec.virtual_address;
         }

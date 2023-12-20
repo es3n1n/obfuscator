@@ -14,24 +14,24 @@ namespace analysis {
         std::size_t stack_space;
 
         /// Implicit conversion to Gp so that we can pass this to the assembler methods
-        [[nodiscard]] /* implicit */ operator zasm::x86::Gp() const {
+        [[nodiscard]] /* implicit */ operator zasm::x86::Gp() const { // NOLINT
             return zasm::x86::Gp{reg.getId()};
         }
 
         /// Implicit conversion to Reg so that we can pass this as an operand
-        [[nodiscard]] /* implicit */ operator zasm::Reg() const {
+        [[nodiscard]] /* implicit */ operator zasm::Reg() const { // NOLINT
             return reg;
         }
 
         /// Implicit conversion to Operand so that we can pass this as an operand
-        [[nodiscard]] /* implicit */ operator zasm::Operand() const {
-            return zasm::Operand(reg);
+        [[nodiscard]] /* implicit */ operator zasm::Operand() const { // NOLINT
+            return {reg};
         }
 
         /// \brief Convert root register to gp
         /// \return gp instance
-        [[nodiscard]] zasm::x86::Gp root_gp() const {
-            return zasm::x86::Gp(root_reg.getId());
+        [[nodiscard]] auto root_gp() const {
+            return zasm::x86::Gp{root_reg.getId()};
         }
     };
 

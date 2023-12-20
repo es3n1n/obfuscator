@@ -69,24 +69,24 @@ namespace mathop {
         virtual ~Operation() = default;
 
         /// \brief Indicates whether this operation should have a second argument or not
-        virtual bool has_second_operand() const = 0;
+        [[nodiscard]] virtual bool has_second_operand() const = 0;
 
         /// \brief Emulate the math operation under the two operands
         /// \param op1 lhs
         /// \param op2 rhs
         /// \return emulated result
-        virtual ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2 = std::nullopt) const = 0;
+        [[nodiscard]] virtual ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const = 0;
 
         /// \brief Lift the revert operation for this math operation
         /// \param assembler zasm assembler
         /// \param operand dst operand
         /// \param argument optional rhs
-        virtual void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument = std::nullopt) const = 0;
+        virtual void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument) const = 0;
 
         /// \brief Generate a random second operand
         /// \param lhs Operand 1
         /// \return Generated operand
-        virtual ArgumentImm generate_rhs(ArgumentImm lhs) const {
+        [[nodiscard]] virtual ArgumentImm generate_rhs(const ArgumentImm lhs) const {
             return const_to_imm_for_rhs(lhs, 0);
         }
     };
@@ -95,7 +95,7 @@ namespace mathop {
     class OperationOneOperand : public Operation {
     public:
         /// \brief Indicates whether this operation should have a second argument or not
-        bool has_second_operand() const override {
+        [[nodiscard]] bool has_second_operand() const override {
             return false;
         }
     };
@@ -104,7 +104,7 @@ namespace mathop {
     class OperationTwoOperands : public Operation {
     public:
         /// \brief Indicates whether this operation should have a second argument or not
-        bool has_second_operand() const override {
+        [[nodiscard]] bool has_second_operand() const override {
             return true;
         }
     };

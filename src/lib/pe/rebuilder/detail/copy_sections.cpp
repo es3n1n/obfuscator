@@ -23,7 +23,7 @@ namespace pe::detail {
             /// Validating that there's enough space for our sections
             auto sections_start = memory::address{sections};
             auto header_end = memory::address{out_img}.offset(optional_header->size_headers);
-            if (sections_start + (sizeof(win::section_header_t) * (image->sections.size() + 1)) > header_end) {
+            if (sections_start + (sizeof(win::section_header_t) * (image->sections.size() + 1)) > header_end) [[unlikely]] {
                 throw std::runtime_error("pe: rebuilder: unable to fit new sections");
             }
 

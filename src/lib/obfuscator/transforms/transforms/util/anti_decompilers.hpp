@@ -139,11 +139,16 @@ namespace obfuscator::transform_util {
             return;
         }
 
-        /// Restore CF
-        auto if_set = program->createLabel();
+        /// Check the stored CF value
+        const auto if_set = program->createLabel();
         assembler->test(cf_val_holder->root_gp(), cf_val_holder->root_gp());
+
+        /// Bind the label and set cursor before the node
+        assembler->bind(if_set);
+        assembler->setCursor(assembler->getCursor()->getPrev());
+
+        /// Clear CF if needed
         assembler->jnz(if_set);
         assembler->clc();
-        assembler->bind(if_set);
     }
 } // namespace obfuscator::transform_util

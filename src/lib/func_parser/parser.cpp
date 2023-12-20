@@ -6,12 +6,6 @@
 
 namespace func_parser {
     template <pe::any_image_t Img>
-    Instance<Img>::~Instance() {
-        function_list_.clear();
-        function_lists_.clear();
-    }
-
-    template <pe::any_image_t Img>
     void Instance<Img>::collect_functions() {
         // Parsing from all sources possible
         //
@@ -20,7 +14,10 @@ namespace func_parser {
         // Combining and sanitizing results
         //
         function_list_ = combiner::combine_function_lists(function_lists_);
+        progress_->step();
+
         function_list_ = sanitizer::sanitize_function_list(function_list_, image_);
+        progress_->step();
 
         // If 0 functions found
         //
@@ -34,7 +31,10 @@ namespace func_parser {
     template <pe::any_image_t Img>
     void Instance<Img>::parse() {
         parse_pdb();
+        progress_->step();
+
         parse_map();
+        progress_->step();
     }
 
     template <pe::any_image_t Img>

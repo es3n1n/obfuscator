@@ -46,6 +46,10 @@ namespace config_parser {
             return function_configurations_.end();
         }
 
+        [[nodiscard]] auto size() const {
+            return function_configurations_.size();
+        }
+
     private:
         std::vector<function_configuration_t> function_configurations_ = {};
         std::vector<transform_configuration_t> global_transform_configurations_ = {};

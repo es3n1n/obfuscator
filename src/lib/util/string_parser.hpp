@@ -12,7 +12,7 @@ namespace util::string {
     /// \param base base (10 for decimal, 16 for hex, etc)
     /// \return parsed value
     [[nodiscard]] inline std::int32_t parse_int32(const std::string_view s, const std::size_t base = 10) {
-        return std::stol(s.data(), nullptr, static_cast<int>(base));
+        return std::stoi(s.data(), nullptr, static_cast<int>(base));
     }
 
     /// \brief Parse uint32 from string
@@ -28,7 +28,7 @@ namespace util::string {
     /// \param base base (10 for decimal, 16 for hex, etc)
     /// \return parsed value
     [[nodiscard]] inline std::int8_t parse_int8(const std::string_view s, const std::size_t base = 10) {
-        return parse_int32(s, base) & 0xFF;
+        return static_cast<std::int8_t>(parse_int32(s, base) & 0xFF);
     }
 
     /// \brief Parse uint8 from string

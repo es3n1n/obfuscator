@@ -79,25 +79,25 @@ namespace obfuscator {
 
         /// \brief Transforms iterator begin for the ranged loops
         /// \return iterator
-        auto begin() {
+        [[nodiscard]] auto begin() {
             return transforms_iterator().begin();
         }
 
         /// \brief Transforms const iterator begin for the ranged loops
         /// \return iterator
-        auto begin() const {
+        [[nodiscard]] auto begin() const {
             return transforms_iterator().begin();
         }
 
         /// \brief Transforms iterator end for the ranged loops
         /// \return iterator
-        auto end() {
+        [[nodiscard]] auto end() {
             return transforms_iterator().end();
         }
 
         /// \brief Transforms const iterator end for the ranged loops
         /// \return iterator
-        auto end() const {
+        [[nodiscard]] auto end() const {
             return transforms_iterator().end();
         }
 

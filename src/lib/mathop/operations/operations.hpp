@@ -1,19 +1,19 @@
 #pragma once
 #include "mathop/operations/operation.hpp"
 
-#define MATHOP_OPERATION_STUB(name, base_name)                                                                                                    \
-    class name final : public base_name {                                                                                                         \
-    public:                                                                                                                                       \
-        ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2 = std::nullopt) const override;                                       \
-        void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument = std::nullopt) const override; \
-        ArgumentImm generate_rhs(ArgumentImm lhs) const override;                                                                                 \
+#define MATHOP_OPERATION_STUB(name, base_name)                                                                                     \
+    class name final : public base_name {                                                                                          \
+    public:                                                                                                                        \
+        ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const override;                                       \
+        void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument) const override; \
+        ArgumentImm generate_rhs(ArgumentImm lhs) const override;                                                                  \
     }
 
-#define MATHOP_OPERATION_STUB_NO_RHS(name, base_name)                                                                                             \
-    class name final : public base_name {                                                                                                         \
-    public:                                                                                                                                       \
-        ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2 = std::nullopt) const override;                                       \
-        void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument = std::nullopt) const override; \
+#define MATHOP_OPERATION_STUB_NO_RHS(name, base_name)                                                                              \
+    class name final : public base_name {                                                                                          \
+    public:                                                                                                                        \
+        ArgumentImm emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const override;                                       \
+        void lift_revert(zasm::x86::Assembler* assembler, zasm::x86::Gp operand, std::optional<Argument> argument) const override; \
     }
 
 #define MATHOP_OPERATION_ONE_OP(name) MATHOP_OPERATION_STUB_NO_RHS(name, mathop::OperationOneOperand)

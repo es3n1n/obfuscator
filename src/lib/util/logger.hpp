@@ -81,7 +81,7 @@ namespace logger {
             // terminal before using them
             //
             std::call_once(once_flag, []() -> void {
-                const HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+                const auto console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
                 if (console_handle == nullptr) {
                     colors_enabled = false;
@@ -92,7 +92,10 @@ namespace logger {
                 // Obtaining current console mode
                 //
                 DWORD console_flags = 0;
-                GetConsoleMode(console_handle, &console_flags);
+                if (GetConsoleMode(console_handle, &console_flags) == 0) [[unlikely]] {
+                    // wtf? ok lets pray ansi codes would work lol.
+                    return;
+                }
 
                 //
                 // Activating virtual terminal
@@ -106,7 +109,6 @@ namespace logger {
                     //
                     if (SetConsoleMode(console_handle, console_flags) == 0) {
                         colors_enabled = false;
-                        return;
                     }
                 }
             });

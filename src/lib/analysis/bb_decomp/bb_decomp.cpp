@@ -14,12 +14,12 @@ namespace analysis::bb_decomp {
         const auto img_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
 
         // Make successor proxy
-        bb_provider_->set_va_finder([this, img_base](const rva_t va, bb_t* callee) {
+        bb_provider_->set_va_finder([this, img_base](const rva_t va, const bb_t* callee) {
             return make_successor(va - img_base, callee); //
         });
 
         // Make successor proxy
-        bb_provider_->set_rva_finder([this](const rva_t rva, bb_t* callee) {
+        bb_provider_->set_rva_finder([this](const rva_t rva, const bb_t* callee) {
             return make_successor(rva, callee); //
         });
 
@@ -46,11 +46,10 @@ namespace analysis::bb_decomp {
         });
 
         // Label finder
-        bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
+        bb_provider_->set_label_finder([this](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
             // Searching in basic blocks with rvas first
-            for (auto& [_, bb] : basic_blocks_) {
-                auto it = bb->labels.find(label->getId());
-                if (it == std::end(bb->labels)) {
+            for (auto& bb : std::views::values(basic_blocks_)) {
+                if (!bb->contains_label(label->getId())) {
                     continue;
                 }
 
@@ -59,8 +58,7 @@ namespace analysis::bb_decomp {
 
             // Searching in virtual basic blocks
             for (auto& bb : virtual_basic_blocks_) {
-                auto it = bb->labels.find(label->getId());
-                if (it == std::end(bb->labels)) {
+                if (!bb->contains_label(label->getId())) {
                     continue;
                 }
 
@@ -185,7 +183,7 @@ namespace analysis::bb_decomp {
 
         /// Collect all the current instructions that should be present within this program
         std::unordered_map<insn_t*, bb_t*> insns = {};
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             for (auto& insn : *bb) {
                 insns[insn.get()] = bb.get();
             }
@@ -361,7 +359,7 @@ namespace analysis::bb_decomp {
             }
 
             auto& last_insn = bb->instructions.at(bb->size() - 1);
-            auto last_mnemonic = last_insn.get()->ref->getMnemonic().value();
+            const auto last_mnemonic = last_insn->ref->getMnemonic().value();
 
             /// Looks legit, i think?
             if (last_mnemonic == ZYDIS_MNEMONIC_JMP || last_mnemonic == ZYDIS_MNEMONIC_RET) {
@@ -430,7 +428,7 @@ namespace analysis::bb_decomp {
             /// Place the jmp
             assembler_->setCursor(last_insn->node_ref);
             assembler_->jmp(label);
-            push_last_instruction(bb);
+            (void)push_last_instruction(bb);
 
             /// Theoretically now we should jump where we should?
         }
@@ -441,9 +439,9 @@ namespace analysis::bb_decomp {
         logger::debug("bb_decomp: updating rescheduled CF..");
 
         /// Iterating over the all basic blocks
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             /// Trying to find the insn with CF changers
-            auto& last_insn = bb->instructions.at(bb->size() - 1);
+            const auto& last_insn = bb->instructions.at(bb->size() - 1);
 
             /// No CF info
             if (last_insn->cf.empty()) {
@@ -478,7 +476,7 @@ namespace analysis::bb_decomp {
                 assert(next_node != nullptr);
 
                 /// Storing its BB
-                auto* analysis_info = next_node->getUserData<insn_t>();
+                const auto* analysis_info = next_node->getUserData<insn_t>();
                 auto acquired_ref = bb_provider_->acquire_ref(analysis_info->bb_ref);
                 assert(acquired_ref.has_value());
                 cf_changer.bb = acquired_ref.value();
@@ -496,7 +494,7 @@ namespace analysis::bb_decomp {
 
         /// Step 0. Clear all predecessors info
         /// We cannot do this in the Step 1
-        for (auto& [_, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             bb->predecessors.clear();
         }
 
@@ -508,7 +506,7 @@ namespace analysis::bb_decomp {
             /// Looking for the dead CF changer refs
             /// (because since we're splitting them, the dst bb could've been already deleted at some point)
             for (auto it = bb->instructions.rbegin(); it != bb->instructions.rend(); std::advance(it, 1)) {
-                auto insn = *it;
+                const auto insn = *it;
                 if (insn->cf.empty()) {
                     continue;
                 }
@@ -554,14 +552,14 @@ namespace analysis::bb_decomp {
                 }
 
                 /// Get its BB and emplace it as the successor
-                auto* analysis_info = last_node->getUserData<insn_t>();
+                const auto* analysis_info = last_node->getUserData<insn_t>();
                 auto acquired_bb = bb_provider_->acquire_ref(analysis_info->bb_ref);
                 assert(acquired_bb.has_value());
                 bb->successors.emplace_back(acquired_bb.value());
             }
 
             /// Iterating over the successors and updating predecessors in successors
-            for (auto& successor : bb->successors) {
+            for (const auto& successor : bb->successors) {
                 successor->predecessors.emplace_back(bb);
             }
         }
@@ -571,7 +569,7 @@ namespace analysis::bb_decomp {
     void Instance<Img>::dump() {
         logger::info("-- Basic blocks for function {:#x}", function_start_);
 
-        for (auto& [_, v] : basic_blocks_) {
+        for (auto& v : std::views::values(basic_blocks_)) {
             debug::dump_bb(*v);
         }
 
@@ -583,7 +581,7 @@ namespace analysis::bb_decomp {
         const auto path = std::filesystem::path(R"(E:\local-projects\obfuscator\scripts\bb_preview\data\)");
         int iter = 0;
 
-        for (auto& [_, basic_block] : basic_blocks_) {
+        for (auto& basic_block : std::views::values(basic_blocks_)) {
             debug::serialize_bb_to_file(*basic_block, path / (std::to_string(iter) + ".bb"));
             iter += 1;
         }

@@ -3,7 +3,6 @@
 #include "util/random.hpp"
 #include "util/types.hpp"
 
-#include <algorithm>
 #include <vector>
 
 namespace mathop {
@@ -123,25 +122,25 @@ namespace mathop {
 
         /// \brief Iterator begin
         /// \return operations begin
-        auto begin() {
+        [[nodiscard]] auto begin() {
             return operations_.begin();
         }
 
         /// \brief Iterator const begin
         /// \return operations const begin
-        auto begin() const {
+        [[nodiscard]] auto begin() const {
             return operations_.begin();
         }
 
         /// \brief Iterator end
         /// \return operations end
-        auto end() {
+        [[nodiscard]] auto end() {
             return operations_.end();
         }
 
         /// \brief Iterator const end
         /// \return operations const end
-        auto end() const {
+        [[nodiscard]] auto end() const {
             return operations_.end();
         }
 

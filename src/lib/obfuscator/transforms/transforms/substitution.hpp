@@ -12,7 +12,7 @@ namespace obfuscator::transforms {
         /// Temporary operand holder for substitutions
         struct tmp_op_holder_t {
             /// Constructor that captures the desired operands
-            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc<Img>& var_alloc, const analysis::insn_t* insn, const zasm::Operand operand,
+            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc<Img>& var_alloc, const analysis::insn_t* insn, const zasm::Operand& operand,
                             const std::optional<zasm::Operand>& other_operand = std::nullopt)
                 : var_alloc(var_alloc), operand(operand), assembler(assembler) {
                 /// No need to alloc anything

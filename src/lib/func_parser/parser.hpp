@@ -2,19 +2,20 @@
 #include "config_parser/config_parser.hpp"
 #include "func_parser/common/common.hpp"
 #include "func_parser/common/sanitizer.hpp"
+#include "util/progress.hpp"
 
 namespace func_parser {
     template <pe::any_image_t Img>
     class Instance {
     public:
-        DEFAULT_CTOR(Instance);
+        DEFAULT_CTOR_DTOR(Instance);
         DEFAULT_COPY(Instance);
-        ~Instance();
 
         void setup(Img* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config) {
             image_ = image;
-            config_ = std::move(config);
-            obfuscator_config_ = std::move(obfuscator_config);
+            config_ = config;
+            obfuscator_config_ = obfuscator_config;
+            progress_.emplace("func_parser: discovering functions", 4);
         }
 
         void collect_functions();
@@ -47,5 +48,6 @@ namespace func_parser {
         function_list_t function_list_ = {}; // function_lists_ combined and sanitized basically
         config_parser::func_parser_config_t config_ = {};
         config_parser::obfuscator_config_t obfuscator_config_ = {};
+        std::optional<util::Progress> progress_ = std::nullopt;
     };
 } // namespace func_parser
