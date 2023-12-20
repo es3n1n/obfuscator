@@ -64,7 +64,7 @@ namespace obfuscator::transforms {
                         auto var_1 = var_alloc.get(true);
                         auto var_2 = var_alloc.get(true);
 
-                        as->mov(var_1, pe::is_x64_v<Img> ? zasm::Imm(-1LL) : zasm::Imm(static_cast<std::int32_t>(-1L)));
+                        as->mov(var_1, pe::is_x64_v<Img> ? zasm::Imm(static_cast<std::int64_t>(-1)) : zasm::Imm(static_cast<std::int32_t>(-1L)));
                         as->lea(var_1, easm::ptr<Img>(var_1));
                         as->mov(var_2, easm::ptr<Img>(var_1));
                         new_bb->push_last_N_insns(as, function->bb_provider.get(), 3);
