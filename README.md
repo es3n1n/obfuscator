@@ -11,7 +11,7 @@ ___
 
 ## Usage
 ```commandline
- Available options:
+Available options:
     -h, --help                   -- This message
     -pdb         [path]          -- Set custom .pdb file location
     -map         [path]          -- Set custom .map file location
@@ -20,7 +20,7 @@ ___
     -g           [name]          -- Start new transform global configuration
     -v           [name] [value]  -- Push value
  
- Examples:
+Examples:
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337 -g TransformName -v SomeGlobalName 1337
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337 -v SomeName0 1337 -g TransformName -v SomeGlobalName 1337
