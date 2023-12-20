@@ -66,12 +66,13 @@ namespace obfuscator {
             /// A little bit of overhead with this once flag, but now the init looks n i c e
             static std::once_flag fl;
             std::call_once(fl, []() -> void {
-                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [](TransformSharedConfig* instance, const std::string_view value, const bool override_default) {
-                    instance->chance(util::string::parse_uint8(value), override_default);
+                callbacks[detail::kSharedConfigsVariableNames[detail::CHANCE]] = [](auto* instance_, const auto value_, const auto override_default_) {
+                    instance_->chance(util::string::parse_uint8(value_), override_default_);
                 };
 
-                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [](TransformSharedConfig* instance, const std::string_view value, const bool override_default) {
-                    instance->repeat_times(util::string::parse_uint8(value), override_default);
+                callbacks[detail::kSharedConfigsVariableNames[detail::REPEAT_TIMES]] = [](auto* instance_, const auto value_,
+                                                                                          const auto override_default_) {
+                    instance_->repeat_times(util::string::parse_uint8(value_), override_default_);
                 };
             });
 
