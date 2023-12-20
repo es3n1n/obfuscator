@@ -1,6 +1,5 @@
 # Obfuscator
 A native code obfuscator written in c++23.
-___
 
 ## Available transforms:
 * Bogus Control Flow
@@ -8,9 +7,10 @@ ___
 * Decompilation breaker (ida, ghidra)
 * Substitution
 
+___
 
 ## Usage
-```cpp
+```commandline
 12:11:30.151 | [  info  ] Available options:
 12:11:30.151 | |        [  info  ] -h, --help                   -- This message
 12:11:30.151 | |        [  info  ] -pdb         [path]          -- Set custom .pdb file location
@@ -32,8 +32,21 @@ ___
 
 ___
 
-## Credits
-- [@j4ckson4800](https://github.com/j4ckson4800)/[@bs1337](https://github.com/bs1337) - Code review, proof-reading
+## Building
+This project is designed to be used on both Linux and Windows, and on any architecture.
+Although you may need to update your compiler/libc++ to the latest version, as we're using some fancy C++23 features.
+
+```commandline
+cmake -B build -DOBFUSCATOR_BUILD_TESTS=0
+cmake --build build --config Release
+```
+
+*If you are using Visual Studio on Windows, you can generate the sln project using the first command and build the project using the generated .sln file.*
+
+___
+
+## Special thanks
+- [@j4ckson4800](https://github.com/j4ckson4800), [@bs1337](https://github.com/bs1337) - Code review, proof-reading
 
 ## License
 GPL-3.0
