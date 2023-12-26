@@ -70,7 +70,7 @@ namespace logger {
 
         //
         // Util function to set console colors
-        // @todo: @es3n1n: maybe add font_style too?
+        // \todo: @es3n1n: maybe add font_style too?
         //
         inline void apply_style(const std::uint8_t foreground, const std::uint8_t background, const std::function<void()>& callback) noexcept {
 #if PLATFORM_IS_WIN
@@ -214,7 +214,7 @@ namespace logger {
                 std::cout << "] ";
 
                 //
-                // @fixme: @es3n1n: this is ugly af
+                // \fixme: @es3n1n: this is ugly af
                 //
                 if constexpr (std::is_same_v<T, std::wstring>) {
                     std::wcout << line << "\n";

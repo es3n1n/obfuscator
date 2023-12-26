@@ -111,7 +111,7 @@ namespace analysis::bb_decomp {
     template <pe::any_image_t Img>
     std::shared_ptr<bb_t> Instance<Img>::process_bb(const rva_t rva) {
         // Initialising stuff
-        // @fixme: @es3n1n: override `get_nt_headers` in `pe::Image` class
+        // \fixme: @es3n1n: override `get_nt_headers` in `pe::Image` class
         const std::uint64_t image_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
         const memory::address virtual_address = rva + image_base;
         const std::uint8_t* data_start = image_->rva_to_ptr(static_cast<std::uint32_t>(rva.inner()));
@@ -286,7 +286,7 @@ namespace analysis::bb_decomp {
 
                         const bool should_remove = *insn->rva >= *bb->start_rva && *insn->rva <= *bb->end_rva;
 
-                        // @fixme: @es3n1n: kinda sucks that we have to manually remove nodes, but whatever i guess
+                        // \fixme: @es3n1n: kinda sucks that we have to manually remove nodes, but whatever i guess
                         //
                         if (should_remove) {
                             this->program_->destroy(insn->node_ref);

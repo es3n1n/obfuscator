@@ -67,7 +67,7 @@ namespace pe {
         /// If a section contains import descriptors the value of iat would be set
         /// to the offset where iat starts within this section, otherwise would be
         /// set to nullopt
-        // @fixme: @es3n1n: THIS IS SO WRONG, BUT I DONT WANT TO STORE THEM IN CONTAINERS IM SO SORRY
+        // \fixme: @es3n1n: THIS IS SO WRONG, BUT I DONT WANT TO STORE THEM IN CONTAINERS IM SO SORRY
         struct {
             std::optional<dir_properties_t> exp = std::nullopt; // export dir
             std::optional<dir_properties_t> imp = std::nullopt; // import dir

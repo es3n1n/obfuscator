@@ -19,8 +19,8 @@ namespace pe::detail {
             const auto virtual_image_size = last_section.virtual_address + last_section.virtual_size;
 
             // Updating values in the header
-            // @todo: @es3n1n: size_code, size_init_data, size_uninit_data, base_of_code, num_rva_sizes
-            // @note: @es3n1n: the sections count field is updated within the `copy_sections` pass!
+            // \todo: @es3n1n: size_code, size_init_data, size_uninit_data, base_of_code, num_rva_sizes
+            // \note: @es3n1n: the sections count field is updated within the `copy_sections` pass!
             //
             optional_header->size_image = virtual_image_size;
 

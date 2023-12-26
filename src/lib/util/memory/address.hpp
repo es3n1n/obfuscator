@@ -8,9 +8,9 @@
 
 #include "reader.hpp"
 
-// @fixme: @es3n1n: this file is a mess
-// @todo: @es3n1n: add += -= operators
-// @todo: @es3n1n: add self_* funcs
+// \fixme: @es3n1n: this file is a mess
+// \todo: @es3n1n: add += -= operators
+// \todo: @es3n1n: add self_* funcs
 
 namespace memory {
     class address {

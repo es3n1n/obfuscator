@@ -2,7 +2,7 @@
 #include "util/logger.hpp"
 #include "util/memory/address.hpp"
 
-// @note: @es3n1n: s/o to @namazso for the stream related functions
+// \note: @es3n1n: s/o to @namazso for the stream related functions
 namespace func_parser::pdb::detail {
     namespace {
         std::vector<std::uint8_t> get_stream_directory(const SuperBlock* header, const memory::address& raw) noexcept {
@@ -72,7 +72,7 @@ namespace func_parser::pdb::detail {
 
             if (stream_blocks == 0) {
                 // Handling empty streams
-                // @note: @es3n1n: not sure how we should handle streams with size -1,
+                // \note: @es3n1n: not sure how we should handle streams with size -1,
                 // maybe somehow different, but if it works - it works.
                 //
                 if (static_cast<int32_t>(stream_size) <= 0) {
@@ -147,7 +147,7 @@ namespace func_parser::pdb::detail {
                 const auto* object_name = iter.cast<char*>();
                 iter = iter.offset(static_cast<std::ptrdiff_t>(std::strlen(object_name)) + 1); // skip object name + '\0'
 
-                // @note: @es3n1n: we don't need it to parse modules that have no info
+                // \note: @es3n1n: we don't need it to parse modules that have no info
                 if (module_info->ModuleSymStream <= 0 || module_info->SymByteSize <= 0 || //
                     streams_.size() <= module_info->ModuleSymStream) [[unlikely]] {
                     continue;
@@ -155,7 +155,7 @@ namespace func_parser::pdb::detail {
 
                 const auto& raw_module_symbol_stream = streams_.at(module_info->ModuleSymStream);
 
-                // @note: @es3n1n: +sizeof(uint32_t) because we are skipping unknown signature,
+                // \note: @es3n1n: +sizeof(uint32_t) because we are skipping unknown signature,
                 // we only need symbols :shrug:
                 auto sym_stream = memory::address{raw_module_symbol_stream.data()}.offset(sizeof(uint32_t));
                 const auto sym_stream_end = sym_stream.offset(module_info->SymByteSize);
@@ -163,8 +163,8 @@ namespace func_parser::pdb::detail {
                 for (; sym_stream < sym_stream_end; sym_stream = sym_stream.align_up(kDBIAlignment)) {
                     const auto* record = sym_stream.as<DBIRecordHeader*>();
 
-                    // @note: @es3n1n: break on stream end
-                    // @note: @es3n1n: for some reason stream doesn't end on the end marker?
+                    // \note: @es3n1n: break on stream end
+                    // \note: @es3n1n: for some reason stream doesn't end on the end marker?
                     // if (record->Kind == detail::e_symbol_kind::S_END) {
                     //    break;
                     //}
@@ -183,7 +183,7 @@ namespace func_parser::pdb::detail {
                 return;
             }
 
-            // @fixme: @es3n1n: is there a better way? i dont think so.
+            // \fixme: @es3n1n: is there a better way? i dont think so.
             const auto* optional_debug_header = memory::address{dbi_header} //
                                                     .offset(sizeof(DBIHeader)) //
                                                     .offset(dbi_header->ModInfoSize) //
