@@ -67,7 +67,7 @@ namespace pe {
     section_t& Image<Img>::new_section(const std::string_view name, const std::size_t size, //
                                        const win::section_characteristics_t characteristics) {
         // Creating a new section.
-        // @note: @es3n1n: we must create a new section before the std::max_element call in
+        // \note: @es3n1n: we must create a new section before the std::max_element call in
         // order to not corrupt the iterator
         auto& new_sec = sections.emplace_back();
 
@@ -194,7 +194,7 @@ namespace pe {
         }
     }
 
-    // @todo: @es3n1n: check for IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE flag
+    // \todo: @es3n1n: check for IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE flag
     template <any_raw_image_t Img>
     void Image<Img>::update_relocations() {
         // Obtaining a pointer to reloc directory header
@@ -210,7 +210,7 @@ namespace pe {
         const win::reloc_directory_t* base_reloc = rva_to_ptr<win::reloc_directory_t>(reloc_hdr->rva);
 
         // Guessing the relocated ptr size
-        // @todo: @es3n1n: is this even needed?
+        // \todo: @es3n1n: is this even needed?
         const auto reloc_size = get_ptr_size<std::uint8_t>();
 
         // Iterating over reloc blocks

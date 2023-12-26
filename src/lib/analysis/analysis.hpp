@@ -114,7 +114,7 @@ namespace analysis {
         std::unordered_map<rva_t, std::list<insn_t*>> image_references;
 
         // A lookup table with key set to insn rva and value is the ptr to insn info,
-        // @fixme: @es3n1n: ptr could be invalid at some point
+        // \fixme: @es3n1n: ptr could be invalid at some point
         //
         std::unordered_map<rva_t, insn_t*> instructions_lookup = {};
 

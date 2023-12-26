@@ -9,7 +9,7 @@
 #include "util/memory/address.hpp"
 #include "util/types.hpp"
 
-// @todo: @es3n1n: we should probably use OMAP from the pdb for rva conversion
+// \todo: @es3n1n: we should probably use OMAP from the pdb for rva conversion
 
 namespace func_parser::pdb::detail {
     class V7Parser {

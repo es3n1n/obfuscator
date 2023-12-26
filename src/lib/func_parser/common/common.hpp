@@ -14,7 +14,7 @@ namespace func_parser {
         std::uint64_t rva = 0;
         std::optional<std::size_t> size = std::nullopt;
 
-        // @note: @es3n1n: im not really sure how to properly merge stuff like
+        // \note: @es3n1n: im not really sure how to properly merge stuff like
         // names. technically there could be a different size of function in the
         // different sources, but I'll let the future me to decide on this
         void merge(const function_t& another) {

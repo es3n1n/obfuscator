@@ -26,7 +26,7 @@ namespace analysis::passes {
                 }
 
                 // Formatting referenced location
-                // @fixme: @es3n1n: add a template param to address class and add conversions to it
+                // \fixme: @es3n1n: add a template param to address class and add conversions to it
                 const auto referenced_loc_name = format::loc(static_cast<std::int32_t>(referenced_insn_rva.inner()));
 
                 // Creating label for the referenced loc

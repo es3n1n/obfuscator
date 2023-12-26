@@ -7,7 +7,7 @@
 namespace analysis {
     template <pe::any_image_t Img>
     void Function<Img>::apply_passes(Img* image) {
-        // @note: @es3n1n: for the apply_bb/apply_insn callbacks please check out the file
+        // \note: @es3n1n: for the apply_bb/apply_insn callbacks please check out the file
         // `analysis/transforms/misc/bb_insn_passes.hpp`, pass that would need to iter bb/insns
         // by themselves should be inserted here
         //
