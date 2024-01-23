@@ -53,10 +53,12 @@ namespace pe::detail {
                     throw std::runtime_error("pe: rebuilder: unable to write section header");
                 }
 
-                /// Copying section data
-                auto sec_ptr = memory::address{data.data()}.offset(section.ptr_raw_data);
-                if (auto write_res = sec_ptr.write(section.raw_data.data(), section.raw_data.size()); !write_res.has_value()) {
-                    throw std::runtime_error("pe: rebuilder: unable to write section raw data");
+                /// Copying section data, if needed
+                if (!section.raw_data.empty()) {
+                    auto sec_ptr = memory::address{data.data()}.offset(section.ptr_raw_data);
+                    if (auto write_res = sec_ptr.write(section.raw_data.data(), section.raw_data.size()); !write_res.has_value()) {
+                        throw std::runtime_error("pe: rebuilder: unable to write section raw data");
+                    }
                 }
 
                 /// Updating the data directories
