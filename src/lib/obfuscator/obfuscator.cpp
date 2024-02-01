@@ -206,6 +206,7 @@ namespace obfuscator {
             /// Erase the original function code
             for (auto& basic_block : *func.bb_storage) {
                 for (auto& insn : basic_block) {
+                    /// Clang-tidy is working a bit weird with smart pointers and `bugprone-unchecked-optional-access`
                     auto* raw_ptr = insn.get();
 
                     /// No need to erase instructions that doesn't exist
