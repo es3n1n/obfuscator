@@ -3,7 +3,7 @@
 #include "util/logger.hpp"
 
 namespace func_parser::pdb {
-    function_list_t discover_functions(const std::filesystem::path& pdb_path, const std::uint64_t) {
+    function_list_t discover_functions(const std::filesystem::path& pdb_path, const std::uint64_t base_of_code [[maybe_unused]]) {
         // Return an empty set if file doesn't exist
         //
         if (!exists(pdb_path)) {
@@ -31,17 +31,17 @@ namespace func_parser::pdb {
 
         const detail::V7Parser parser(pdb_content.data(), pdb_content.size());
         parser.iter_symbols<detail::DBIRecordProc32>(
-            [&result, parser](detail::DBIRecordProc32* sym) -> void {
+            [&result, parser](detail::DBIRecordProc32* sym) -> void { // NOLINT(bugprone-exception-escape)
                 auto& item = result.emplace_back();
                 item.valid = true; // probably we should check for something first
 
-                item.name = sym->Name;
+                item.name = static_cast<std::string>(sym->Name); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
                 item.size = std::make_optional<std::size_t>(sym->Size);
 
                 const auto segment = parser.get_section(sym->Segment - 1);
                 if (!segment.has_value()) {
                     item.valid = false;
-                    logger::warn("pdb: Unable to obtain segment base num[{}] func[{}]", sym->Segment, sym->Name);
+                    logger::warn("pdb: Unable to obtain segment base num[{}] func[{}]", sym->Segment, item.name);
                     return;
                 }
 

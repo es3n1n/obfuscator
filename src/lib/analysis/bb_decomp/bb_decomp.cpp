@@ -14,8 +14,8 @@ namespace analysis::bb_decomp {
         const auto img_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
 
         // Make successor proxy
-        bb_provider_->set_va_finder([this, img_base](const rva_t va, const bb_t* callee) {
-            return make_successor(va - img_base, callee); //
+        bb_provider_->set_va_finder([this, img_base](const rva_t virt_addr, const bb_t* callee) {
+            return make_successor(virt_addr - img_base, callee); //
         });
 
         // Make successor proxy
@@ -192,8 +192,8 @@ namespace analysis::bb_decomp {
         /// Sum stats
         std::size_t weird_nodes = 0;
 
-        for (auto node = program_->getHead(); node != nullptr; node = node->getNext()) {
-            const auto pinsn = node->getUserData<insn_t>();
+        for (auto* node = program_->getHead(); node != nullptr; node = node->getNext()) {
+            auto* const pinsn = node->getUserData<insn_t>();
 
             // Weird, but ok
             if (pinsn == nullptr) {
@@ -224,6 +224,7 @@ namespace analysis::bb_decomp {
             logger::warn("bb_decomp: got {} outdated nodes while updating refs", insns.size());
 
             for (auto& [insn, bb] : insns) {
+                // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
                 std::erase_if(bb->instructions, [insn](const std::shared_ptr<insn_t>& item) -> bool { return item.get() == insn; });
             }
         }
@@ -234,7 +235,7 @@ namespace analysis::bb_decomp {
         /// \note @es3n1n: Looks kinda scary, but splitting 2k+ basic blocks took me ~350ms so
         /// i guess we'll keep it as it is (PR welcome), perhaps an interval/segment tree could be used here
         logger::debug("analysis: splitting BBs..");
-        bool split_something;
+        bool split_something; // NOLINT(cppcoreguidelines-init-variables)
 
         // Splitting while there's something to split
         //
@@ -390,13 +391,14 @@ namespace analysis::bb_decomp {
 
             /// Let's see if we end up on a successor after this node
             zasm::Node* next_node = last_insn->node_ref->getNext();
-            while (next_node != nullptr && !next_node->holds<zasm::Instruction>())
+            while (next_node != nullptr && !next_node->holds<zasm::Instruction>()) {
                 next_node = next_node->getNext();
+            }
 
             /// If there's no next node, then we totally should insert a jmp
             if (next_node != nullptr) {
                 /// Get the next instruction analysis info
-                const auto next_insn = next_node->getUserData<insn_t>();
+                auto* const next_insn = next_node->getUserData<insn_t>();
                 if (next_insn == nullptr || !next_insn->rva.has_value()) [[unlikely]] {
                     continue;
                 }

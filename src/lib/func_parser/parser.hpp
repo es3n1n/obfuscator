@@ -43,6 +43,14 @@ namespace func_parser {
             return true;
         }
 
+        void progress_step() {
+            if (!progress_.has_value()) {
+                return;
+            }
+
+            progress_->step();
+        }
+
         Img* image_ = nullptr;
         std::vector<function_list_t> function_lists_ = {};
         function_list_t function_list_ = {}; // function_lists_ combined and sanitized basically

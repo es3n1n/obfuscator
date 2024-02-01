@@ -5,7 +5,7 @@
 // \note: @es3n1n: s/o to @namazso for the stream related functions
 namespace func_parser::pdb::detail {
     namespace {
-        std::vector<std::uint8_t> get_stream_directory(const SuperBlock* header, const memory::address& raw) noexcept {
+        std::vector<std::uint8_t> get_stream_directory(const SuperBlock* header, const memory::address& raw) {
             const auto size = header->NumDirectoryBytes;
             const auto block_size = static_cast<std::ptrdiff_t>(header->BlockSize);
             const auto block_count = (size + block_size - 1) / block_size;

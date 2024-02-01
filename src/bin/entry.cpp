@@ -21,12 +21,7 @@ namespace {
         logger::info("startup: bye-bye");
     }
 
-    int startup(const int argc, char* argv[]) try {
-        rnd::detail::seed();
-        obfuscator::startup_scheduler();
-
-        auto config = config_parser::from_argv(argc, argv);
-
+    int startup(config_parser::Config& config) try {
         const auto binary_path = config.obfuscator_config().binary_path;
 
         logger::info("main: loading binary from {}", binary_path.string());
@@ -35,9 +30,7 @@ namespace {
             throw std::runtime_error("Got empty binary");
         }
 
-        // NOLINTNEXTLINE
         auto* img_x64 = reinterpret_cast<win::image_x64_t*>(file.data());
-        // NOLINTNEXTLINE
         auto* img_x86 = reinterpret_cast<win::image_x86_t*>(file.data());
 
         if (!pe::common::is_valid(img_x64)) {
@@ -57,6 +50,13 @@ namespace {
     }
 } // namespace
 
-int main(const int argc, char* argv[]) {
-    return startup(argc, argv);
+int main(const int argc, char* argv[]) try {
+    rnd::detail::seed();
+    obfuscator::startup_scheduler();
+
+    auto config = config_parser::from_argv(argc, argv);
+    return startup(config);
+} catch (...) {
+    logger::critical("Unknown runtime error");
+    return 1;
 }

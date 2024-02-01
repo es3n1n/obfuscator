@@ -206,21 +206,23 @@ namespace obfuscator {
             /// Erase the original function code
             for (auto& basic_block : *func.bb_storage) {
                 for (auto& insn : basic_block) {
+                    auto* raw_ptr = insn.get();
+
                     /// No need to erase instructions that doesn't exist
-                    if (!insn->rva.has_value()) {
+                    if (!raw_ptr->rva.has_value() || !raw_ptr->length.has_value()) {
                         continue;
                     }
 
                     /// Generate random bytes
-                    const auto randomized = rnd::bytes(*insn->length);
+                    const auto randomized = rnd::bytes(*raw_ptr->length);
 
                     /// Replace instruction with junk
-                    auto* insn_ptr = image_->rva_to_ptr(*insn->rva);
+                    auto* insn_ptr = image_->rva_to_ptr(*raw_ptr->rva);
                     std::memcpy(insn_ptr, randomized.data(), randomized.size());
 
                     /// Remove pe relocation, if there's any
-                    if (insn->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
-                        image_->relocations.erase(*insn->rva + insn->reloc.offset.value_or(0));
+                    if (raw_ptr->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
+                        image_->relocations.erase(*raw_ptr->rva + raw_ptr->reloc.offset.value_or(0));
                     }
                 }
             }
@@ -248,7 +250,7 @@ namespace obfuscator {
             /// Save the new relocations
             for (const zasm::RelocationInfo& relocation : assembled.relocations) {
                 /// Map zasm relocation kind to windows relocation kind
-                win::reloc_type_id win_reloc_type;
+                win::reloc_type_id win_reloc_type; // NOLINT(cppcoreguidelines-init-variables)
                 switch (relocation.kind) {
                 default:
                 case zasm::RelocationType::None:
