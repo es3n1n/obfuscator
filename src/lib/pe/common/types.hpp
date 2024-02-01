@@ -54,12 +54,12 @@ namespace pe {
             std::memcpy(name.data(), header.name.short_name, name.size() * sizeof(decltype(name)::value_type));
         }
 
-        std::array<char, LEN_SHORT_STR> name = {'\0'};
+        std::array<char, LEN_SHORT_STR> name = {};
         std::uint32_t virtual_size = 0U;
         std::uint32_t virtual_address = 0U;
         std::uint32_t size_raw_data = 0U;
         std::uint32_t ptr_raw_data = 0U;
-        win::section_characteristics_t characteristics = {0U};
+        win::section_characteristics_t characteristics = {};
 
         std::vector<std::uint8_t> raw_data = {};
 
