@@ -193,10 +193,10 @@ namespace analysis::bb_decomp {
         std::size_t weird_nodes = 0;
 
         for (auto node = program_->getHead(); node != nullptr; node = node->getNext()) {
-            const auto user_data = node->getUserDataU64();
+            const auto pinsn = node->getUserData<insn_t>();
 
             // Weird, but ok
-            if (user_data == 0) {
+            if (pinsn == nullptr) {
                 if (node->holds<zasm::Label>() || node->holds<zasm::Instruction>()) {
                     weird_nodes++;
                 }
@@ -205,7 +205,6 @@ namespace analysis::bb_decomp {
             }
 
             // This is kinda unsafe but whatever..
-            auto* pinsn = memory::cast<insn_t*>(user_data);
             pinsn->node_ref = node;
             pinsn->ref = node->getIf<zasm::Instruction>();
 

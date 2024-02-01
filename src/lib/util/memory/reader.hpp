@@ -1,5 +1,4 @@
 #pragma once
-#include "casts.hpp"
 #include <cstdint>
 #include <expected>
 
@@ -99,6 +98,6 @@ namespace memory {
 
     template <typename Ty>
     std::expected<std::size_t, e_error_code> write(const Ty* src, const std::uintptr_t dst) {
-        return write(memory::cast<const uintptr_t>(dst), src, sizeof(Ty));
+        return write(dst, src, sizeof(Ty));
     }
 } // namespace memory

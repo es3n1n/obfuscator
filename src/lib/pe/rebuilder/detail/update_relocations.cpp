@@ -30,7 +30,7 @@ namespace pe::detail {
 
             // Obtaining reloc directory and iterating over blocks in order to get the last block
             //
-            auto* dir = memory::cast<win::reloc_directory_t*>(reloc_section->raw_data.data() + reloc_offset);
+            auto* dir = reinterpret_cast<win::reloc_directory_t*>(reloc_section->raw_data.data() + reloc_offset);
             auto* block = &dir->first_block;
             for (; block && block->size_block != 0U; block = block->next()) {
                 // do nothing
@@ -42,7 +42,7 @@ namespace pe::detail {
 
             // Erasing current reloc info
             //
-            std::memset(memory::cast<void*>(dir), 0x00, dir_size);
+            std::memset(dir, 0x00, dir_size);
 
             // If this section consists only of zeroes, then we could just remove the whole section :)
             // Otherwise, we should keep it.

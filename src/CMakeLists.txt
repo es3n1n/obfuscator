@@ -96,7 +96,6 @@ set(obfuscator-lib_SOURCES
 	"lib/util/iterators.hpp"
 	"lib/util/logger.hpp"
 	"lib/util/memory/address.hpp"
-	"lib/util/memory/casts.hpp"
 	"lib/util/memory/reader.hpp"
 	"lib/util/passes.hpp"
 	"lib/util/platform.hpp"
