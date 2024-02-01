@@ -352,7 +352,7 @@ namespace analysis::bb_decomp {
     void Instance<Img>::insert_jmps() {
         logger::debug("bb_decomp: veryfing BB intersections..");
         /// Lookup for the basic blocks that for some reason aren't jumping to their successor(s)
-        for (auto& [rva, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             if (bb->instructions.empty()) [[unlikely]] {
                 continue;
             }
@@ -493,12 +493,12 @@ namespace analysis::bb_decomp {
 
         /// Step 0. Clear all predecessors info
         /// We cannot do this in the Step 1
-        for (auto& bb : std::views::values(basic_blocks_)) {
+        for (const auto& bb : std::views::values(basic_blocks_)) {
             bb->predecessors.clear();
         }
 
         /// Step 1. Updating successors
-        for (auto& [start, bb] : basic_blocks_) {
+        for (auto& bb : std::views::values(basic_blocks_)) {
             /// Remove all the "outdated" info
             bb->successors.clear();
 
