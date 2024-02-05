@@ -82,6 +82,13 @@ namespace analysis {
             });
         }
 
+        /// \brief Verify that we already have this register in cache
+        /// \param reg_id Register id
+        /// \return true if we have this register in cache
+        [[nodiscard]] bool contains(const RegID reg_id) const {
+            return cache_.contains(reg_id);
+        }
+
         /// \brief Temporary blacklist register
         /// \param reg_id register
         void blacklist(const RegID reg_id) {
@@ -160,6 +167,16 @@ namespace analysis {
         /// \param reg_id register
         void push(const RegID reg_id) {
             storage_.push(to_gp_ptr(reg_id));
+        }
+
+        /// \brief Push only already known register (if we have it in our cache)
+        /// \param reg_id register id
+        void push_known(const RegID reg_id) {
+            const auto gp_ptr = to_gp_ptr(reg_id);
+            if (!storage_.contains(gp_ptr)) {
+                return;
+            }
+            storage_.push(gp_ptr);
         }
 
         /// \brief Temporary blacklist register
