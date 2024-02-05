@@ -385,6 +385,11 @@ namespace analysis::bb_decomp {
 
             /// If we didn't find it via CF info, then try to get the first successor
             if (expected_next_bb == nullptr) {
+                /// Funny case where the compiler just places a call to an exception without any successors or ret instructions
+                if (bb->successors.empty()) {
+                    continue;
+                }
+
                 assert(bb->successors.size() == 1);
                 expected_next_bb = bb->successors.at(0).get();
             }
