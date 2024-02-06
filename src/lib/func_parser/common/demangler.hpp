@@ -4,7 +4,7 @@
 #include <LLVMDemangle.h>
 
 namespace func_parser::demangler {
-    inline function_list_t demangle_functions(function_list_t items) noexcept {
+    inline void demangle_functions(function_list_t& items) noexcept {
         // Iterating over the functions and demangling their names
         //
         std::ranges::for_each(items, [](function_t& item) -> void {
@@ -13,7 +13,5 @@ namespace func_parser::demangler {
                 std::free(demangled);
             }
         });
-
-        return items;
     }
 } // namespace func_parser::demangler

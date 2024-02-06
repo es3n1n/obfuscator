@@ -40,10 +40,10 @@ namespace func_parser {
                 return false;
             }
 
-            auto list = sanitizer::sanitize_function_list(std::move(items), image_);
-            list = demangler::demangle_functions(list);
+            sanitizer::sanitize_function_list(items, image_);
+            demangler::demangle_functions(items);
 
-            function_lists_.emplace_back(list);
+            function_lists_.emplace_back(items);
             return true;
         }
 

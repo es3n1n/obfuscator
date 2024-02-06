@@ -17,7 +17,7 @@ namespace func_parser {
         function_list_ = combiner::combine_function_lists(function_lists_);
         progress_step();
 
-        function_list_ = sanitizer::sanitize_function_list(function_list_, image_);
+        sanitizer::sanitize_function_list(function_list_, image_);
         progress_step();
 
         // If 0 functions found

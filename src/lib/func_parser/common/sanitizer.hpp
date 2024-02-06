@@ -4,7 +4,7 @@
 
 namespace func_parser::sanitizer {
     template <pe::any_image_t Img>
-    function_list_t sanitize_function_list(function_list_t items, const Img* image) noexcept {
+    void sanitize_function_list(function_list_t& items, const Img* image) noexcept {
         // Obtaining executable sections
         //
         const auto exec_sections = image->find_sections_if([](const pe::section_t& sec) -> bool { //
@@ -41,7 +41,5 @@ namespace func_parser::sanitizer {
             //
             return !in_exec_mem;
         });
-
-        return items;
     }
 } // namespace func_parser::sanitizer
