@@ -50,6 +50,7 @@ namespace func_parser::pdb {
             detail::e_symbol_kind::S_LPROC32, // Iterating over local procedures
             detail::e_symbol_kind::S_GPROC32 // Iterating over global procedures
         );
+        /// \todo: @es3n1n: S_EXPORT
 
         // We are done here
         //
