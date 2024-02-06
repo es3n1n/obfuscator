@@ -57,5 +57,5 @@ namespace config_parser {
         func_parser_config_t func_parser_config_ = {};
     };
 
-    Config from_argv(std::size_t argc, char* argv[]);
+    Config from_argv(std::size_t argc, const char* argv[]);
 } // namespace config_parser

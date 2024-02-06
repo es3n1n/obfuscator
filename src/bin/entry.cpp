@@ -50,7 +50,7 @@ namespace {
     }
 } // namespace
 
-int main(const int argc, char* argv[]) try {
+int main(const int argc, const char* argv[]) try {
     rnd::detail::seed();
     obfuscator::startup_scheduler();
 
