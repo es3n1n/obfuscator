@@ -8,29 +8,51 @@
     #define PLATFORM_IS_WIN64 true
     #define PLATFORM_IS_LINUX false
     #define PLATFORM_IS_APPLE false
+    #define PLATFORM_IS_UNIX false
+    #define PLATFORM_IS_POSIX false
 #elif defined(_WIN32)
     #define PLATFORM_IS_WIN true
     #define PLATFORM_IS_WIN32 true
     #define PLATFORM_IS_WIN64 false
     #define PLATFORM_IS_LINUX false
     #define PLATFORM_IS_APPLE false
+    #define PLATFORM_IS_UNIX false
+    #define PLATFORM_IS_POSIX false
 #elif defined(__linux__)
     #define PLATFORM_IS_WIN false
     #define PLATFORM_IS_WIN32 false
     #define PLATFORM_IS_WIN64 false
     #define PLATFORM_IS_LINUX true
     #define PLATFORM_IS_APPLE false
+    #define PLATFORM_IS_UNIX true
+    #define PLATFORM_IS_POSIX false
 #elif defined(__APPLE__)
     #define PLATFORM_IS_WIN false
     #define PLATFORM_IS_WIN32 false
     #define PLATFORM_IS_WIN64 false
     #define PLATFORM_IS_LINUX false
     #define PLATFORM_IS_APPLE true
+    #define PLATFORM_IS_UNIX true
+    #define PLATFORM_IS_POSIX false
+#elif defined(__unix__)
+    #define PLATFORM_IS_WIN false
+    #define PLATFORM_IS_WIN32 false
+    #define PLATFORM_IS_WIN64 false
+    #define PLATFORM_IS_LINUX false
+    #define PLATFORM_IS_APPLE false
+    #define PLATFORM_IS_UNIX true
+    #define PLATFORM_IS_POSIX false
+#elif defined(_POSIX_VERSION)
+    #define PLATFORM_IS_WIN false
+    #define PLATFORM_IS_WIN32 false
+    #define PLATFORM_IS_WIN64 false
+    #define PLATFORM_IS_LINUX false
+    #define PLATFORM_IS_APPLE false
+    #define PLATFORM_IS_UNIX false
+    #define PLATFORM_IS_POSIX true
 #else
     #error UNKNOWN SYSTEM
 #endif
-
-#define PLATFORM_IS_UNIX (PLATFORM_IS_LINUX || PLATFORM_IS_APPLE)
 
 ///
 /// Compilers
@@ -64,6 +86,7 @@ namespace platform {
     [[maybe_unused]] constexpr bool is_linux = PLATFORM_IS_LINUX;
     [[maybe_unused]] constexpr bool is_apple = PLATFORM_IS_APPLE;
     [[maybe_unused]] constexpr bool is_unix = PLATFORM_IS_UNIX;
+    [[maybe_unused]] constexpr bool is_posix = PLATFORM_IS_POSIX;
 
     [[maybe_unused]] constexpr bool is_gcc = PLATFORM_IS_GCC;
     [[maybe_unused]] constexpr bool is_clang = PLATFORM_IS_CLANG;
