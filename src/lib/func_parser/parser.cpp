@@ -1,5 +1,6 @@
 #include "func_parser/parser.hpp"
 #include "func_parser/common/combiner.hpp"
+#include "func_parser/common/demangler.hpp"
 #include "func_parser/map/map.hpp"
 #include "func_parser/pdb/pdb.hpp"
 #include "util/logger.hpp"

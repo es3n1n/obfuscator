@@ -2,6 +2,7 @@
 #include "config_parser/config_parser.hpp"
 #include "func_parser/common/common.hpp"
 #include "func_parser/common/sanitizer.hpp"
+#include "func_parser/common/demangler.hpp"
 #include "util/progress.hpp"
 
 namespace func_parser {
@@ -39,7 +40,10 @@ namespace func_parser {
                 return false;
             }
 
-            function_lists_.emplace_back(sanitizer::sanitize_function_list(std::move(items), image_));
+            auto list = sanitizer::sanitize_function_list(std::move(items), image_);
+            list = demangler::demangle_functions(list);
+
+            function_lists_.emplace_back(list);
             return true;
         }
 

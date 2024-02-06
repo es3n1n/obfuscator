@@ -59,6 +59,7 @@ set(obfuscator-lib_SOURCES
 	"lib/easm/misc/reg_convert.hpp"
 	"lib/func_parser/common/combiner.hpp"
 	"lib/func_parser/common/common.hpp"
+	"lib/func_parser/common/demangler.hpp"
 	"lib/func_parser/common/sanitizer.hpp"
 	"lib/func_parser/map/map.hpp"
 	"lib/func_parser/parser.hpp"
@@ -151,6 +152,7 @@ target_link_libraries(obfuscator-lib PUBLIC
 	zasm
 	linux-pe
 	magic_enum
+	LLVMDemangle
 )
 
 # Target: obfuscator
@@ -182,6 +184,7 @@ set(obfuscator_SOURCES
 	"lib/easm/misc/reg_convert.hpp"
 	"lib/func_parser/common/combiner.hpp"
 	"lib/func_parser/common/common.hpp"
+	"lib/func_parser/common/demangler.hpp"
 	"lib/func_parser/common/sanitizer.hpp"
 	"lib/func_parser/map/map.hpp"
 	"lib/func_parser/parser.hpp"
@@ -314,6 +317,7 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"lib/easm/misc/reg_convert.hpp"
 		"lib/func_parser/common/combiner.hpp"
 		"lib/func_parser/common/common.hpp"
+		"lib/func_parser/common/demangler.hpp"
 		"lib/func_parser/common/sanitizer.hpp"
 		"lib/func_parser/map/map.hpp"
 		"lib/func_parser/parser.hpp"

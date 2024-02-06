@@ -26,6 +26,7 @@ link-libraries = [
     "zasm",
     "linux-pe",
     "magic_enum",
+    "LLVMDemangle",
 ]
 
 
