@@ -1,7 +1,9 @@
 #pragma once
 #include <filesystem>
 
+#include <obfuscator/transforms/scheduler.hpp>
 #include <util/files.hpp>
+#include <util/random.hpp>
 #include <util/types.hpp>
 
 #include <gtest/gtest.h>
