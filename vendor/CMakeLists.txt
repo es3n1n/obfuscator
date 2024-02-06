@@ -62,4 +62,3 @@ else()
 endif()
 add_subdirectory(magic_enum)
 set(CMAKE_FOLDER ${CMKR_CMAKE_FOLDER})
-

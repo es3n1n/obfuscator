@@ -15,3 +15,8 @@ build-tests = "OBFUSCATOR_BUILD_TESTS"
 
 [subdir.vendor]
 [subdir.src]
+
+# Ugly fix for Zydis collisions :/
+cmake-after = """
+set_target_properties(obfuscator obfuscator-lib obfuscator-tests zasm Zydis Zycore PROPERTIES VS_GLOBAL_VcpkgEnabled false)
+"""

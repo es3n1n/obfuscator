@@ -56,3 +56,4 @@ endif()
 add_subdirectory(src)
 set(CMAKE_FOLDER ${CMKR_CMAKE_FOLDER})
 
+set_target_properties(obfuscator obfuscator-lib obfuscator-tests zasm Zydis Zycore PROPERTIES VS_GLOBAL_VcpkgEnabled false)
