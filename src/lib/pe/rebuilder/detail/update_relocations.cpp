@@ -32,7 +32,7 @@ namespace pe::detail {
             //
             auto* dir = reinterpret_cast<win::reloc_directory_t*>(reloc_section->raw_data.data() + reloc_offset);
             auto* block = &dir->first_block;
-            for (; block && block->size_block != 0U; block = block->next()) {
+            for (; block != nullptr && block->base_rva != 0U && block->size_block != 0U; block = block->next()) {
                 // do nothing
             }
 
