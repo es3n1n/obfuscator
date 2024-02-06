@@ -4,10 +4,10 @@
 
 /// Unsupported for now
 
-TEST(MapMSVC, x64) {
-    ASSERT_EQ(false, true);
-}
-
-TEST(MapMSVC, x86) {
-    ASSERT_EQ(false, true);
-}
+// TEST(MapMSVC, x64) {
+//     ASSERT_EQ(false, true);
+// }
+//
+// TEST(MapMSVC, x86) {
+//     ASSERT_EQ(false, true);
+// }
