@@ -21,7 +21,7 @@ msvc.compile-options = ["/wd4661", "/MP"]
 alias = "obfuscator::lib"
 type = "obfuscator-library"
 include-directories = ["lib/"]
-sources = ["lib/**.cpp"]
+sources = ["lib/**.cpp", "lib/**.hpp"]
 link-libraries = [
     "zasm",
     "linux-pe",
@@ -31,7 +31,7 @@ link-libraries = [
 
 [target.obfuscator]
 type = "obfuscator-executable"
-sources = ["bin/**.cpp"]
+sources = ["bin/**.cpp", "lib/**.hpp"]
 include-directories = ["bin/"]
 link-libraries = ["obfuscator::lib"]
 
@@ -39,7 +39,7 @@ link-libraries = ["obfuscator::lib"]
 [target.obfuscator-tests]
 condition = "build-tests"
 type = "obfuscator-executable"
-sources = ["tests/**.cpp"]
+sources = ["tests/**.cpp", "lib/**.hpp"]
 include-directories = ["tests/"]
 link-libraries = ["obfuscator::lib", "GTest::gtest_main"]
 cmake-after = """
