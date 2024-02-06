@@ -1,57 +1,43 @@
-[template.obfuscator-executable]
-type = "executable"
+[target.obfuscator-project]
+type = "interface"
 compile-features = ["cxx_std_23"]
 compile-definitions = ["NOMINMAX"]
 unix.compile-options = ["-stdlib=libc++"]
 unix.link-options = ["-fuse-ld=lld", "-Wl,-L/usr/local/lib/"]
 msvc.compile-options = ["/wd4661", "/MP"]
-
-
-# Shamelessly copying stuff because there's no way to use a template with different types :/
-[template.obfuscator-library]
-type = "library"
-compile-features = ["cxx_std_23"]
-compile-definitions = ["NOMINMAX"]
-unix.compile-options = ["-stdlib=libc++"]
-unix.link-options = ["-fuse-ld=lld", "-Wl,-L/usr/local/lib/"]
-msvc.compile-options = ["/wd4661", "/MP"]
-
 
 [target.obfuscator-lib]
 alias = "obfuscator::lib"
-type = "obfuscator-library"
+type = "library"
 include-directories = ["lib/"]
 sources = ["lib/**.cpp", "lib/**.hpp"]
 link-libraries = [
+    "obfuscator-project",
     "zasm",
     "linux-pe",
     "magic_enum",
     "LLVMDemangle",
 ]
 
-
 [target.obfuscator]
-type = "obfuscator-executable"
+type = "executable"
 sources = ["bin/**.cpp", "lib/**.hpp"]
 include-directories = ["bin/"]
-link-libraries = ["obfuscator::lib"]
-
+link-libraries = ["obfuscator-project", "obfuscator::lib"]
 
 [target.obfuscator-tests]
 condition = "build-tests"
-type = "obfuscator-executable"
+type = "executable"
 sources = ["tests/**.cpp", "lib/**.hpp"]
 include-directories = ["tests/"]
-link-libraries = ["obfuscator::lib", "GTest::gtest_main"]
+link-libraries = ["obfuscator-project", "obfuscator::lib", "GTest::gtest_main"]
 cmake-after = """
 FetchContent_MakeAvailable(resources)
 target_compile_definitions(obfuscator-tests PRIVATE OBFUSCATOR_RESOURCES_PATH="${resources_SOURCE_DIR}")
 """
 
-
 [target.obfuscator-tests.properties]
 PROJECT_LABEL = "tests"
-
 
 [[test]]
 condition = "build-tests"

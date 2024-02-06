@@ -6,6 +6,37 @@ if(CMKR_ROOT_PROJECT)
 	configure_file(cmake.toml cmake.toml COPYONLY)
 endif()
 
+# Target: obfuscator-project
+add_library(obfuscator-project INTERFACE)
+
+target_compile_definitions(obfuscator-project INTERFACE
+	NOMINMAX
+)
+
+target_compile_features(obfuscator-project INTERFACE
+	cxx_std_23
+)
+
+if(UNIX) # unix
+	target_compile_options(obfuscator-project INTERFACE
+		-stdlib=libc++
+	)
+endif()
+
+if(MSVC) # msvc
+	target_compile_options(obfuscator-project INTERFACE
+		"/wd4661"
+		"/MP"
+	)
+endif()
+
+if(UNIX) # unix
+	target_link_options(obfuscator-project INTERFACE
+		-fuse-ld=lld
+		"-Wl,-L/usr/local/lib/"
+	)
+endif()
+
 # Target: obfuscator-lib
 set(obfuscator-lib_SOURCES
 	"lib/analysis/analysis.cpp"
@@ -116,39 +147,12 @@ target_sources(obfuscator-lib PRIVATE ${obfuscator-lib_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-lib_SOURCES})
 
 add_library(obfuscator::lib ALIAS obfuscator-lib)
-target_compile_definitions(obfuscator-lib PUBLIC
-	NOMINMAX
-)
-
-target_compile_features(obfuscator-lib PUBLIC
-	cxx_std_23
-)
-
-if(UNIX) # unix
-	target_compile_options(obfuscator-lib PUBLIC
-		-stdlib=libc++
-	)
-endif()
-
-if(MSVC) # msvc
-	target_compile_options(obfuscator-lib PUBLIC
-		"/wd4661"
-		"/MP"
-	)
-endif()
-
-if(UNIX) # unix
-	target_link_options(obfuscator-lib PUBLIC
-		-fuse-ld=lld
-		"-Wl,-L/usr/local/lib/"
-	)
-endif()
-
 target_include_directories(obfuscator-lib PUBLIC
 	"lib/"
 )
 
 target_link_libraries(obfuscator-lib PUBLIC
+	obfuscator-project
 	zasm
 	linux-pe
 	magic_enum
@@ -240,39 +244,12 @@ add_executable(obfuscator)
 target_sources(obfuscator PRIVATE ${obfuscator_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator_SOURCES})
 
-target_compile_definitions(obfuscator PRIVATE
-	NOMINMAX
-)
-
-target_compile_features(obfuscator PRIVATE
-	cxx_std_23
-)
-
-if(UNIX) # unix
-	target_compile_options(obfuscator PRIVATE
-		-stdlib=libc++
-	)
-endif()
-
-if(MSVC) # msvc
-	target_compile_options(obfuscator PRIVATE
-		"/wd4661"
-		"/MP"
-	)
-endif()
-
-if(UNIX) # unix
-	target_link_options(obfuscator PRIVATE
-		-fuse-ld=lld
-		"-Wl,-L/usr/local/lib/"
-	)
-endif()
-
 target_include_directories(obfuscator PRIVATE
 	"bin/"
 )
 
 target_link_libraries(obfuscator PRIVATE
+	obfuscator-project
 	obfuscator::lib
 )
 
@@ -291,6 +268,7 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"tests/func_parser/map/map.msvc.cpp"
 		"tests/func_parser/pdb/pdb.llvm.cpp"
 		"tests/func_parser/pdb/pdb.msvc.cpp"
+		"tests/units.cpp"
 		"lib/analysis/analysis.hpp"
 		"lib/analysis/bb_decomp/bb_decomp.hpp"
 		"lib/analysis/common/common.hpp"
@@ -373,39 +351,12 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 	target_sources(obfuscator-tests PRIVATE ${obfuscator-tests_SOURCES})
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-tests_SOURCES})
 
-	target_compile_definitions(obfuscator-tests PRIVATE
-		NOMINMAX
-	)
-
-	target_compile_features(obfuscator-tests PRIVATE
-		cxx_std_23
-	)
-
-	if(UNIX) # unix
-		target_compile_options(obfuscator-tests PRIVATE
-			-stdlib=libc++
-		)
-	endif()
-
-	if(MSVC) # msvc
-		target_compile_options(obfuscator-tests PRIVATE
-			"/wd4661"
-			"/MP"
-		)
-	endif()
-
-	if(UNIX) # unix
-		target_link_options(obfuscator-tests PRIVATE
-			-fuse-ld=lld
-			"-Wl,-L/usr/local/lib/"
-		)
-	endif()
-
 	target_include_directories(obfuscator-tests PRIVATE
 		"tests/"
 	)
 
 	target_link_libraries(obfuscator-tests PRIVATE
+		obfuscator-project
 		obfuscator::lib
 		GTest::gtest_main
 	)
