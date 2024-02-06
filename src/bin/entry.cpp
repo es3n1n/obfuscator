@@ -13,10 +13,7 @@ namespace {
         pe::Image<Img> image(raw_image);
 
         obfuscator::Instance<decltype(image)> inst(&image, config);
-        inst.setup();
-        inst.obfuscate();
-        inst.assemble();
-        inst.save();
+        inst.run();
 
         logger::info("startup: bye-bye");
     }

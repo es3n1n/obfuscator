@@ -283,7 +283,7 @@ namespace obfuscator {
     }
 
     template <pe::any_image_t Img>
-    void Instance<Img>::save() {
+    std::filesystem::path Instance<Img>::save() {
         logger::info("obfuscator: saving..");
         auto new_img = image_->rebuild_pe_image();
 
@@ -299,6 +299,15 @@ namespace obfuscator {
         util::write_file(out_path, new_img.data(), new_img.size());
 
         logger::info("obfuscator: saved output to {}", out_path.string());
+        return out_path;
+    }
+
+    template <pe::any_image_t Img>
+    std::filesystem::path Instance<Img>::run() {
+        setup();
+        obfuscate();
+        assemble();
+        return save();
     }
 
     PE_DECL_TEMPLATE_CLASSES(Instance);
