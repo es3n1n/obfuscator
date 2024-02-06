@@ -6,6 +6,8 @@
 #include <zasm/zasm.hpp>
 
 namespace easm {
+    constexpr size_t kMaxEntryInstructionSize = 5; // jump in our case
+
     inline bool is_jcc_or_jmp(const zasm::Instruction& insn) {
         const auto mnemonic = insn.getMnemonic();
 
