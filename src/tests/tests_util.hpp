@@ -14,6 +14,8 @@ namespace test {
     //
     inline void start() noexcept {
         logger::enabled = false;
+        rnd::detail::seed();
+        obfuscator::startup_scheduler();
     }
 
     inline std::filesystem::path get_resources_dir() noexcept {
