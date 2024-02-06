@@ -2,16 +2,16 @@
 ///
 /// Systems
 ///
-#if defined(_WIN32)
-    #define PLATFORM_IS_WIN true
-    #define PLATFORM_IS_WIN32 true
-    #define PLATFORM_IS_WIN64 false
-    #define PLATFORM_IS_LINUX false
-    #define PLATFORM_IS_APPLE false
-#elif defined(_WIN64)
+#if defined(_WIN64)
     #define PLATFORM_IS_WIN true
     #define PLATFORM_IS_WIN32 false
     #define PLATFORM_IS_WIN64 true
+    #define PLATFORM_IS_LINUX false
+    #define PLATFORM_IS_APPLE false
+#elif defined(_WIN32)
+    #define PLATFORM_IS_WIN true
+    #define PLATFORM_IS_WIN32 true
+    #define PLATFORM_IS_WIN64 false
     #define PLATFORM_IS_LINUX false
     #define PLATFORM_IS_APPLE false
 #elif defined(__linux__)
@@ -55,6 +55,8 @@
 /// Cxx interface
 ///
 namespace platform {
+    [[maybe_unused]] constexpr size_t bitness = std::numeric_limits<size_t>::digits;
+
     [[maybe_unused]] constexpr bool is_win = PLATFORM_IS_WIN;
     [[maybe_unused]] constexpr bool is_win32 = PLATFORM_IS_WIN32;
     [[maybe_unused]] constexpr bool is_win64 = PLATFORM_IS_WIN64;
