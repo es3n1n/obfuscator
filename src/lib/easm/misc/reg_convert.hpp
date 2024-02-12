@@ -27,7 +27,7 @@ namespace easm::reg_convert {
     }
 
     inline zasm::Reg::Id gp64_to_gp8(const zasm::Reg::Id reg_id) {
-        const auto result = zasm::x86::Gp(reg_id).r8();
+        const auto result = zasm::x86::Gp(reg_id).r16(); // \fixme @es3n1n: We can't just straight use r8. see Vol.2B 4 - 35 => no ah/bh/ch/dh with REX
         assert(result.isValid());
         return result.getId();
     }
