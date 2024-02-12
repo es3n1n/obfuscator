@@ -1,8 +1,8 @@
 #pragma once
 #include "config_parser/config_parser.hpp"
 #include "func_parser/common/common.hpp"
-#include "func_parser/common/sanitizer.hpp"
 #include "func_parser/common/demangler.hpp"
+#include "func_parser/common/sanitizer.hpp"
 #include "util/progress.hpp"
 
 namespace func_parser {
