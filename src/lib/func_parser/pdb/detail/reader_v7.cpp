@@ -5,7 +5,7 @@
 // \note: @es3n1n: s/o to @namazso for the stream related functions
 namespace func_parser::pdb::detail {
     namespace {
-        std::vector<std::uint8_t> get_stream_directory(const SuperBlock* header, const memory::address& raw) noexcept {
+        std::vector<std::uint8_t> get_stream_directory(const SuperBlock* header, const memory::address& raw) {
             const auto size = header->NumDirectoryBytes;
             const auto block_size = static_cast<std::ptrdiff_t>(header->BlockSize);
             const auto block_count = (size + block_size - 1) / block_size;
@@ -55,15 +55,15 @@ namespace func_parser::pdb::detail {
 
         const auto block_size = header_->BlockSize;
 
-        const std::size_t streams_count = memory::address{stream_directory.data()}.get<std::uint32_t>().value();
+        const std::ptrdiff_t streams_count = memory::address{stream_directory.data()}.get<std::int32_t>().value();
 
         const auto* streams = memory::address{stream_directory.data()}.offset(sizeof(std::uint32_t)).cast<std::uint32_t*>();
-        const auto* ids = memory::address{streams}.offset(static_cast<std::ptrdiff_t>(streams_count) * sizeof(std::uint32_t)).cast<std::uint32_t*>();
+        const auto* ids = memory::address{streams}.offset(streams_count * static_cast<std::ptrdiff_t>(sizeof(std::uint32_t))).cast<std::uint32_t*>();
 
         streams_.clear();
         streams_.reserve(streams_count);
 
-        for (std::size_t i = 0; i < streams_count; ++i) {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(streams_count); ++i) {
             const auto stream_size = streams[i];
             const auto stream_blocks = (stream_size + block_size - 1) / block_size;
 
@@ -123,8 +123,8 @@ namespace func_parser::pdb::detail {
             auto* sym_stream = sym_stream_raw.data();
             const auto* sym_stream_end = sym_stream + sym_stream_raw.size();
 
-            for (; sym_stream != sym_stream_end; sym_stream += (memory::cast<DBIRecordHeader*>(sym_stream)->Size + 2)) {
-                dbi_symbols_[memory::cast<DBIRecordHeader*>(sym_stream)->Kind].emplace_back(sym_stream);
+            for (; sym_stream != sym_stream_end; sym_stream += reinterpret_cast<DBIRecordHeader*>(sym_stream)->Size + 2) {
+                dbi_symbols_[reinterpret_cast<DBIRecordHeader*>(sym_stream)->Kind].emplace_back(sym_stream);
             }
         };
 
@@ -201,7 +201,7 @@ namespace func_parser::pdb::detail {
             }
 
             auto& raw_image_section_stream = streams_.at(optional_debug_header->SectionHeaderStreamIndex);
-            auto* image_section_stream = memory::cast<IMAGE_SECTION_HEADER*>(raw_image_section_stream.data());
+            auto* image_section_stream = reinterpret_cast<IMAGE_SECTION_HEADER*>(raw_image_section_stream.data());
 
             for (std::size_t i = 0; i < (raw_image_section_stream.size() / sizeof(IMAGE_SECTION_HEADER)); ++i) {
                 auto* image_section = &image_section_stream[i];

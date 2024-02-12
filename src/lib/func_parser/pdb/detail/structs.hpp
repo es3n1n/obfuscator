@@ -16,9 +16,11 @@ namespace func_parser::pdb::detail {
         DBI_HEADER = 3,
     };
 
+    /// \todo @es3n1n: Add S_GPROC32_ID, S_LPROC32_ID, S_LPROC32_DPC, S_LPROC32_DPC_ID
     enum e_symbol_kind : std::uint16_t {
         S_LPROC32 = 0x110FU, // local fn
         S_GPROC32 = 0x1110U, // global fn
+        S_PUB32 = 0x110EU, // public symbol
         S_END = 0x6, // end of mod symbols
     };
 
@@ -130,7 +132,7 @@ namespace func_parser::pdb::detail {
         uint16_t Segment;
     };
 
-    struct DBIRecordProc32 {
+    struct DBIFunction {
         DBIRecordHeader Header;
         uint32_t Parent;
         uint32_t End;
@@ -142,11 +144,23 @@ namespace func_parser::pdb::detail {
         uint32_t Offset;
         uint16_t Segment;
         uint8_t Flags;
-        // NOLINTNEXTLINE
-        char Name[1];
+        char Name[1]; // NOLINT
     };
 
-    struct DBIRecordLProc32 : DBIRecordProc32 { };
-    struct DBIRecordGProc32 : DBIRecordProc32 { };
+    enum PublicSymFlags : uint32_t {
+        None = 0,
+        Code = 1 << 0,
+        Function = 1 << 1,
+        Managed = 1 << 2,
+        MSIL = 1 << 3,
+    };
+
+    struct DBIPublicSymbol {
+        DBIRecordHeader Header;
+        PublicSymFlags Flags;
+        uint32_t Offset;
+        uint16_t Segment;
+        char Name[1];
+    };
 #pragma pack(pop)
 } // namespace func_parser::pdb::detail

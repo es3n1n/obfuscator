@@ -2,6 +2,7 @@
 [subdir.gtest]
 [subdir.linux-pe]
 [subdir.magic_enum]
+[subdir.LLVMDemangle]
 
 [fetch-content.resources]
 condition = "build-tests"

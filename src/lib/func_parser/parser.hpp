@@ -1,6 +1,7 @@
 #pragma once
 #include "config_parser/config_parser.hpp"
 #include "func_parser/common/common.hpp"
+#include "func_parser/common/demangler.hpp"
 #include "func_parser/common/sanitizer.hpp"
 #include "util/progress.hpp"
 
@@ -39,8 +40,19 @@ namespace func_parser {
                 return false;
             }
 
-            function_lists_.emplace_back(sanitizer::sanitize_function_list(std::move(items), image_));
+            sanitizer::sanitize_function_list(items, image_);
+            demangler::demangle_functions(items);
+
+            function_lists_.emplace_back(items);
             return true;
+        }
+
+        void progress_step() {
+            if (!progress_.has_value()) {
+                return;
+            }
+
+            progress_->step();
         }
 
         Img* image_ = nullptr;

@@ -10,3 +10,6 @@
 [submodule "vendor/gtest"]
 	path = vendor/gtest
 	url = https://github.com/google/googletest
+[submodule "vendor/LLVMDemangle"]
+	path = vendor/LLVMDemangle
+	url = https://github.com/es3n1n/LLVMDemangle.git

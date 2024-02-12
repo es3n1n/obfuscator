@@ -3,7 +3,7 @@
 #include "obfuscator/transforms/configs.hpp"
 
 namespace config_parser {
-    Config from_argv(std::size_t argc, char* argv[]) {
+    Config from_argv(std::size_t argc, const char* argv[]) {
         /// No binary path
         if (argc < 2) {
             cli::print_help(argv);

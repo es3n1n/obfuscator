@@ -61,7 +61,7 @@ namespace cli {
         }
     } // namespace detail
 
-    inline void print_help(char* argv[]) {
+    inline void print_help(const char* argv[]) {
         logger::enabled = true; // just to be sure
         logger::info("github.com/es3n1n/obfuscator - A PoC native code obfuscator");
         auto pad = [] {

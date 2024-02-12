@@ -32,19 +32,19 @@ namespace analysis::passes {
 
     template <pe::any_image_t Img>
     bool bb_insn_passes_t<Img>::apply(Function<Img>* function, Img* image) {
-        using namespace detail::bb_insn_passes;
+        namespace detail = detail::bb_insn_passes;
         bool result = false;
 
         // Iterating over BB and invoking callbacks
         //
         //
         function->bb_storage->iter_bbs([&](bb_t& basic_block) -> void {
-            result |= on_bb<Img>(function, basic_block, image);
+            result |= detail::on_bb<Img>(function, basic_block, image);
 
             // Iterating over instructions and invoking callbacks
             //
             std::for_each(basic_block.instructions.begin(), basic_block.instructions.end(), [&function, &image, &result](auto& instruction) -> void { //
-                result |= on_insn<Img>(function, *instruction, image);
+                result |= detail::on_insn<Img>(function, *instruction, image);
             });
         });
 

@@ -14,12 +14,12 @@ namespace analysis::bb_decomp {
                 const auto& insn = basic_block->instructions.at(i);
 
                 /// We aren't interested in the successful estimations of jcc/jmps
-                if (!(insn->flags & UNABLE_TO_ESTIMATE_JCC)) {
+                if ((insn->flags & UNABLE_TO_ESTIMATE_JCC) == 0) {
                     continue;
                 }
 
                 /// OK, we just hit a `jmp/jcc reg`, let's confirm that to be sure
-                const auto jmp_reg = insn->ref->getOperandIf<zasm::Reg>(0);
+                auto* const jmp_reg = insn->ref->getOperandIf<zasm::Reg>(0);
                 if (insn->ref->getOperandCount() != 1 || jmp_reg == nullptr) {
                     continue;
                 }
@@ -87,14 +87,14 @@ namespace analysis::bb_decomp {
                         }
 
                         /// Get the dst reg operand
-                        const auto dst_op = prev_insn->ref->getOperandIf<zasm::Reg>(0);
-                        const auto src_op = prev_insn->ref->getOperandIf<zasm::Mem>(1);
+                        auto* const dst_op = prev_insn->ref->getOperandIf<zasm::Reg>(0);
+                        auto* const src_op = prev_insn->ref->getOperandIf<zasm::Mem>(1);
                         if (dst_op == nullptr || src_op == nullptr) {
                             return;
                         }
 
                         /// Get the memory operand from index_load
-                        const auto mem_index_op = (**jump_table.index_load_at)->ref->getOperandIf<zasm::Mem>(1);
+                        auto* const mem_index_op = (**jump_table.index_load_at)->ref->getOperandIf<zasm::Mem>(1);
                         assert(mem_index_op != nullptr);
 
                         /// If matches, then yeah we found it
@@ -107,8 +107,9 @@ namespace analysis::bb_decomp {
 
                     match_load_index();
                     match_base_move();
-                    if (jump_table.index_load_at.has_value() && jump_table.base_move_at.has_value())
+                    if (jump_table.index_load_at.has_value() && jump_table.base_move_at.has_value()) {
                         break;
+                    }
                 }
 
                 /// Something's off
@@ -186,9 +187,11 @@ namespace analysis::bb_decomp {
             /// then we should erase all the other stuff between it and the jump.
             /// Then, we could easily compare this reg value and jump to the bbs.
 
+            assert(info.index_load_at.has_value());
+
             /// Obtain the ptr mov operand
-            const auto pjmp_reg = (**info.index_load_at)->ref->getOperandIf<zasm::Reg>(0);
-            const auto pmem_op = (**info.index_load_at)->ref->getOperandIf<zasm::Mem>(1);
+            auto* const pjmp_reg = (**info.index_load_at)->ref->getOperandIf<zasm::Reg>(0);
+            auto* const pmem_op = (**info.index_load_at)->ref->getOperandIf<zasm::Mem>(1);
             if (pmem_op == nullptr || pjmp_reg == nullptr) [[unlikely]] {
                 throw std::runtime_error("analysis: unable to obtain mem_op/jmp_reg for jumptable expansion");
             }
@@ -207,12 +210,12 @@ namespace analysis::bb_decomp {
             mem_op.setBase(zasm::Reg(zasm::Reg::Id::None));
 
             /// Change the cursor pos
-            const auto insert_to = (**info.index_load_at)->node_ref->getPrev();
+            auto* const insert_to = (**info.index_load_at)->node_ref->getPrev();
             assembler_->setCursor(insert_to);
 
             /// Erase other nodes
             for (auto it = *info.index_load_at; it != (*info.bb)->instructions.end(); ++it) {
-                const auto ptr = it->get();
+                auto* const ptr = it->get();
                 if (!ptr->rva.has_value()) {
                     continue;
                 }
@@ -237,7 +240,7 @@ namespace analysis::bb_decomp {
 
             /// Emit the lea instead
             assembler_->lea(jmp_reg, mem_op);
-            auto last_node = assembler_->getCursor();
+            auto* last_node = assembler_->getCursor();
             (void)push_last_instruction(*info.bb);
 
             /// Current bb that it should treat as predecessor
@@ -251,7 +254,7 @@ namespace analysis::bb_decomp {
                 std::shared_ptr<bb_t> ptr = nullptr;
                 zasm::Node* first = nullptr;
                 zasm::Node* last = nullptr;
-                const std::size_t count = 0;
+                std::size_t count = 0;
             };
             std::vector<bb_info_t> new_bbs = {};
 
@@ -267,7 +270,7 @@ namespace analysis::bb_decomp {
                 /// Compare the index value with current index
                 assembler_->setCursor(last_node);
                 assembler_->cmp(jmp_reg, zasm::Imm16(index * std::max(mem_op.getScale(), static_cast<uint8_t>(1))));
-                auto first_node = assembler_->getCursor();
+                auto* first_node = assembler_->getCursor();
 
                 /// JZ
                 assembler_->jz(label);

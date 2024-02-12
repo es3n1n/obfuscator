@@ -138,9 +138,15 @@ namespace memory {
             return address{address_ + factor - 1U}.align_down(factor);
         }
 
-        template <typename T>
-        [[nodiscard]] constexpr T cast() const noexcept {
-            return memory::cast<T>(address_);
+        template <typename DstTy>
+        [[nodiscard]] constexpr DstTy cast() const noexcept {
+            if constexpr (std::is_same_v<std::remove_cv_t<DstTy>, decltype(address_)>) {
+                return address_;
+            } else if constexpr (sizeof(DstTy) < sizeof(address_)) {
+                return static_cast<DstTy>(address_);
+            } else {
+                return (DstTy)address_; // NOLINT
+            }
         }
 
         template <typename T>

@@ -6,10 +6,10 @@ namespace mathop::operations {
     /// \param op1 lhs
     /// \param op2 rhs
     /// \return emulated result
-    ArgumentImm Dec::emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const {
+    ArgumentImm Dec::emulate(ArgumentImm op1, std::optional<ArgumentImm> op2 [[maybe_unused]]) const {
         ArgumentImm result;
         std::visit(
-            [&]<typename Ty>(Ty&& op1_value) -> void { //
+            [&]<typename Ty>(Ty op1_value) -> void { //
                 result.emplace<std::decay_t<Ty>>(op1_value - 1);
             },
             op1);
@@ -20,7 +20,7 @@ namespace mathop::operations {
     /// \param assembler zasm assembler
     /// \param operand dst operand
     /// \param argument optional rhs
-    void Dec::lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp operand, std::optional<Argument> argument) const {
+    void Dec::lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp operand, std::optional<Argument> argument [[maybe_unused]]) const {
         assembler->inc(operand);
     }
 } // namespace mathop::operations

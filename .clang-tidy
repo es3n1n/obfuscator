@@ -1,27 +1,43 @@
 Checks: >
     bugprone-*,
-    -bugprone-easily-swappable-parameters,
-    clang-diagnostic-*,
+    cert-*,
     clang-analyzer-*,
+    clang-analyzer-*,
+    clang-diagnostic-*,
+    concurrency-*,
     cppcoreguidelines-*,
-    -cppcoreguidelines-pro-type-union-access,
-    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
-    -cppcoreguidelines-non-private-member-variables-in-classes,
-    mpi-*,
-    modernize-*,
-    -modernize-use-trailing-return-type,
-    -modernize-use-nodiscard,
+    fuchsia-multiple-inheritance,
+    google-*,
+    hicpp-*,
     misc-*,
-    -misc-non-private-member-variables-in-classes,
-    -misc-no-recursion,
+    modernize-*,
+    mpi-*,
     performance-*,
+    portability-*,
     readability-*,
-    -readability-function-cognitive-complexity,
+    -bugprone-easily-swappable-parameters,
+    -cert-err58-cpp,
+    -cppcoreguidelines-avoid-do-while,
+    -cppcoreguidelines-non-private-member-variables-in-classes,
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-type-reinterpret-cast,
+    -cppcoreguidelines-pro-type-union-access,
+    -misc-include-cleaner,
+    -misc-no-recursion,
+    -modernize-use-trailing-return-type,
     -readability-convert-member-functions-to-static,
-WarningsAsErrors: ''
+    -readability-function-cognitive-complexity,
+    -readability-identifier-length,
+WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle: file
 CheckOptions:
-  cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: '1'
-  modernize-use-nullptr.NullMacros: 'NULL'
+    - key: 'cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic'
+      value: '1'
+    - key: 'modernize-use-nullptr.NullMacros'
+      value: '1'
+    - key: 'misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic'
+      value: '1'
+    - key: 'readability-redundant-access-specifiers.CheckFirstDeclaration'
+      value: '1'

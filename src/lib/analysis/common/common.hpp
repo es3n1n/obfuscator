@@ -430,17 +430,17 @@ namespace analysis {
 
                 /// Push ref if condition met
                 ///
-                const auto not_met_type = is_conditional ? cf_direction_t::e_type::JCC_CONDITION_MET : cf_direction_t::e_type::JMP;
+                const auto met_type = is_conditional ? cf_direction_t::e_type::JCC_CONDITION_MET : cf_direction_t::e_type::JMP;
 
                 if (jcc_branch.has_value()) {
-                    push_cf_changer(not_met_type, bb_provider->find_by_start_va(jcc_branch.value(), this));
+                    push_cf_changer(met_type, bb_provider->find_by_start_va(jcc_branch.value(), this));
                     return;
                 }
 
                 if (jcc_branch_label.has_value()) {
                     auto bb_ref = bb_provider->find_by_label(jcc_branch_label.value(), this);
                     assert(bb_ref.has_value()); // we shouldn't reschedule this one
-                    push_cf_changer(not_met_type, bb_ref.value());
+                    push_cf_changer(met_type, bb_ref.value());
                 }
             };
             update_cf();

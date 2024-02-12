@@ -2,7 +2,6 @@
 #include "analysis/common/common.hpp"
 #include "util/files.hpp"
 
-#include <filesystem>
 #include <sstream>
 
 #include <magic_enum.hpp>

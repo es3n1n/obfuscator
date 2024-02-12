@@ -44,6 +44,7 @@ namespace analysis::passes {
                     throw std::runtime_error("analysis: Unable to find referenced insn");
                 }
                 function->program.get()->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
+                referenced_insn->second->bb_ref->push_label(*referenced_loc_label_node, function->bb_provider.get());
 
                 // Iterating over instructions that referenced this RVA
                 //

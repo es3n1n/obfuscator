@@ -2,13 +2,11 @@
 
 #include "func_parser/map/map.hpp"
 #include "util/logger.hpp"
-#include "util/memory/casts.hpp"
 
 #include <cassert>
 
 namespace func_parser::map {
     namespace {
-
         // Extracting `0001` segment index, `00000000` segment offset and `main` from
         // `0001:00000000 main 0000000140001000 f FileName.obj`
         //
@@ -31,7 +29,7 @@ namespace func_parser::map {
         // Converting to string stream
         //
         std::stringstream str_stream;
-        str_stream.str(std::string{memory::cast<const char*>(map_content.data()), map_content.size()});
+        str_stream.str(std::string{reinterpret_cast<const char*>(map_content.data()), map_content.size()});
 
         // Initializing func_parser state
         //

@@ -10,11 +10,14 @@ namespace analysis {
     using RegID = zasm::Reg::Id;
 
     namespace detail {
+        /// Protected registers list, should be in x64
         inline std::array kProtectedRegisters = {RegID{ZYDIS_REGISTER_RSP}, RegID{ZYDIS_REGISTER_RBP}, RegID{ZYDIS_REGISTER_RIP}};
+        /// X86 registers. Please note that these should be in x86.
         inline std::array kRegistersX86 = {
-            RegID{ZYDIS_REGISTER_RAX}, RegID{ZYDIS_REGISTER_RBX}, RegID{ZYDIS_REGISTER_RCX}, RegID{ZYDIS_REGISTER_RDX},
-            RegID{ZYDIS_REGISTER_RSI}, RegID{ZYDIS_REGISTER_RDI}, RegID{ZYDIS_REGISTER_RBP}, RegID{ZYDIS_REGISTER_RSP},
+            RegID{ZYDIS_REGISTER_EAX}, RegID{ZYDIS_REGISTER_EBX}, RegID{ZYDIS_REGISTER_ECX}, RegID{ZYDIS_REGISTER_EDX},
+            RegID{ZYDIS_REGISTER_ESI}, RegID{ZYDIS_REGISTER_EDI}, RegID{ZYDIS_REGISTER_EBP}, RegID{ZYDIS_REGISTER_ESP},
         };
+        /// X64-only registers
         inline std::array kRegistersX64 = {
             RegID{ZYDIS_REGISTER_R8},  RegID{ZYDIS_REGISTER_R9},  RegID{ZYDIS_REGISTER_R10}, RegID{ZYDIS_REGISTER_R11},
             RegID{ZYDIS_REGISTER_R12}, RegID{ZYDIS_REGISTER_R13}, RegID{ZYDIS_REGISTER_R14}, RegID{ZYDIS_REGISTER_R15},
@@ -30,6 +33,8 @@ namespace analysis {
         /// \brief Emplace register to the cache
         /// \param reg_id Register id
         void push(const RegID reg_id) {
+            assert(reg_id != zasm::Reg::Id::None && reg_id != zasm::Reg::Id::Invalid);
+
             /// Mark as recently used
             if (cache_.contains(reg_id)) {
                 items_.remove(reg_id);
@@ -80,6 +85,13 @@ namespace analysis {
                 items_.push_front(lru);
                 return lru;
             });
+        }
+
+        /// \brief Verify that we already have this register in cache
+        /// \param reg_id Register id
+        /// \return true if we have this register in cache
+        [[nodiscard]] bool contains(const RegID reg_id) const {
+            return cache_.contains(reg_id);
         }
 
         /// \brief Temporary blacklist register
@@ -160,6 +172,16 @@ namespace analysis {
         /// \param reg_id register
         void push(const RegID reg_id) {
             storage_.push(to_gp_ptr(reg_id));
+        }
+
+        /// \brief Push only already known register (if we have it in our cache)
+        /// \param reg_id register id
+        void push_known(const RegID reg_id) {
+            const auto gp_ptr = to_gp_ptr(reg_id);
+            if (!storage_.contains(gp_ptr)) {
+                return;
+            }
+            storage_.push(gp_ptr);
         }
 
         /// \brief Temporary blacklist register
