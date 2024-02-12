@@ -36,7 +36,7 @@ namespace obfuscator::transforms {
 
             /// Get its value, bitsize
             const auto imm_value = imm_op->value<std::uint64_t>();
-            const auto imm_bitsize = easm::get_operand_size(function->machine_mode, insn->ref, 0).value_or(imm_op->getBitSize());
+            const auto imm_bitsize = easm::get_operand_size(function->machine_mode, insn->ref, 0);
 
             /// Export all registers and push them to the LRU blacklist
             for (auto reg : easm::get_all_registers(*insn->ref)) {
