@@ -231,9 +231,9 @@ namespace logger {
         std::conditional_t<detail::wchar_str_view_t<Str>, std::wstring, std::string> msg; \
                                                                                           \
         if constexpr (detail::wchar_str_view_t<Str>) {                                    \
-            msg = std::vformat(fmt, std::make_wformat_args(std::forward<Args>(args)...)); \
+            msg = std::vformat(fmt, std::make_wformat_args(args...));                     \
         } else {                                                                          \
-            msg = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));  \
+            msg = std::vformat(fmt, std::make_format_args(args...));                      \
         }                                                                                 \
                                                                                           \
         detail::log_line(Indentation, prefix, (color_fg).fg, (color_bg).bg, msg);         \
