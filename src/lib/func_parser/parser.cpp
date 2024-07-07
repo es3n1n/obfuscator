@@ -1,5 +1,6 @@
 #include "func_parser/parser.hpp"
 #include "func_parser/common/combiner.hpp"
+#include "func_parser/common/demangler.hpp"
 #include "func_parser/map/map.hpp"
 #include "func_parser/pdb/pdb.hpp"
 #include "util/logger.hpp"
@@ -14,10 +15,10 @@ namespace func_parser {
         // Combining and sanitizing results
         //
         function_list_ = combiner::combine_function_lists(function_lists_);
-        progress_->step();
+        progress_step();
 
-        function_list_ = sanitizer::sanitize_function_list(function_list_, image_);
-        progress_->step();
+        sanitizer::sanitize_function_list(function_list_, image_);
+        progress_step();
 
         // If 0 functions found
         //
@@ -31,10 +32,10 @@ namespace func_parser {
     template <pe::any_image_t Img>
     void Instance<Img>::parse() {
         parse_pdb();
-        progress_->step();
+        progress_step();
 
         parse_map();
-        progress_->step();
+        progress_step();
     }
 
     template <pe::any_image_t Img>

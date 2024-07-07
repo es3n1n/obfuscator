@@ -6,6 +6,37 @@ if(CMKR_ROOT_PROJECT)
 	configure_file(cmake.toml cmake.toml COPYONLY)
 endif()
 
+# Target: obfuscator-project
+add_library(obfuscator-project INTERFACE)
+
+target_compile_definitions(obfuscator-project INTERFACE
+	NOMINMAX
+)
+
+target_compile_features(obfuscator-project INTERFACE
+	cxx_std_23
+)
+
+if(UNIX) # unix
+	target_compile_options(obfuscator-project INTERFACE
+		-stdlib=libc++
+	)
+endif()
+
+if(MSVC) # msvc
+	target_compile_options(obfuscator-project INTERFACE
+		"/wd4661"
+		"/MP"
+	)
+endif()
+
+if(UNIX) # unix
+	target_link_options(obfuscator-project INTERFACE
+		-fuse-ld=lld
+		"-Wl,-L/usr/local/lib/"
+	)
+endif()
+
 # Target: obfuscator-lib
 set(obfuscator-lib_SOURCES
 	"lib/analysis/analysis.cpp"
@@ -59,6 +90,7 @@ set(obfuscator-lib_SOURCES
 	"lib/easm/misc/reg_convert.hpp"
 	"lib/func_parser/common/combiner.hpp"
 	"lib/func_parser/common/common.hpp"
+	"lib/func_parser/common/demangler.hpp"
 	"lib/func_parser/common/sanitizer.hpp"
 	"lib/func_parser/map/map.hpp"
 	"lib/func_parser/parser.hpp"
@@ -96,7 +128,6 @@ set(obfuscator-lib_SOURCES
 	"lib/util/iterators.hpp"
 	"lib/util/logger.hpp"
 	"lib/util/memory/address.hpp"
-	"lib/util/memory/casts.hpp"
 	"lib/util/memory/reader.hpp"
 	"lib/util/passes.hpp"
 	"lib/util/platform.hpp"
@@ -107,31 +138,104 @@ set(obfuscator-lib_SOURCES
 	"lib/util/string_parser.hpp"
 	"lib/util/structs.hpp"
 	"lib/util/types.hpp"
+	cmake.toml
 )
 
-add_library(obfuscator-lib INTERFACE)
+add_library(obfuscator-lib)
 
-target_sources(obfuscator-lib INTERFACE ${obfuscator-lib_SOURCES})
+target_sources(obfuscator-lib PRIVATE ${obfuscator-lib_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-lib_SOURCES})
 
 add_library(obfuscator::lib ALIAS obfuscator-lib)
-target_compile_features(obfuscator-lib INTERFACE
-	cxx_std_23
-)
-
-target_include_directories(obfuscator-lib INTERFACE
+target_include_directories(obfuscator-lib PUBLIC
 	"lib/"
 )
 
-target_link_libraries(obfuscator-lib INTERFACE
+target_link_libraries(obfuscator-lib PUBLIC
+	obfuscator-project
 	zasm
 	linux-pe
 	magic_enum
+	LLVMDemangle
 )
 
 # Target: obfuscator
 set(obfuscator_SOURCES
 	"bin/entry.cpp"
+	"lib/analysis/analysis.hpp"
+	"lib/analysis/bb_decomp/bb_decomp.hpp"
+	"lib/analysis/common/common.hpp"
+	"lib/analysis/common/debug.hpp"
+	"lib/analysis/common/provider.hpp"
+	"lib/analysis/lru_reg/lru_reg.hpp"
+	"lib/analysis/observer/observer.hpp"
+	"lib/analysis/passes/collect_img_references.hpp"
+	"lib/analysis/passes/collect_lookup_table.hpp"
+	"lib/analysis/passes/label_references.hpp"
+	"lib/analysis/passes/lru_reg.hpp"
+	"lib/analysis/passes/misc/bb_insn_passes.hpp"
+	"lib/analysis/passes/reloc_marker.hpp"
+	"lib/analysis/var_alloc/var_alloc.hpp"
+	"lib/cli/cli.hpp"
+	"lib/config_parser/config_parser.hpp"
+	"lib/config_parser/structs.hpp"
+	"lib/easm/assembler/assembler.hpp"
+	"lib/easm/cursor/cursor.hpp"
+	"lib/easm/debug/debug.hpp"
+	"lib/easm/disassembler/disassembler.hpp"
+	"lib/easm/easm.hpp"
+	"lib/easm/misc/misc.hpp"
+	"lib/easm/misc/reg_convert.hpp"
+	"lib/func_parser/common/combiner.hpp"
+	"lib/func_parser/common/common.hpp"
+	"lib/func_parser/common/demangler.hpp"
+	"lib/func_parser/common/sanitizer.hpp"
+	"lib/func_parser/map/map.hpp"
+	"lib/func_parser/parser.hpp"
+	"lib/func_parser/pdb/detail/parser_v7.hpp"
+	"lib/func_parser/pdb/detail/structs.hpp"
+	"lib/func_parser/pdb/pdb.hpp"
+	"lib/mathop/mathop.hpp"
+	"lib/mathop/operations/impl/util.hpp"
+	"lib/mathop/operations/operation.hpp"
+	"lib/mathop/operations/operations.hpp"
+	"lib/obfuscator/config_merger/config_merger.hpp"
+	"lib/obfuscator/function.hpp"
+	"lib/obfuscator/obfuscator.hpp"
+	"lib/obfuscator/transforms/configs.hpp"
+	"lib/obfuscator/transforms/scheduler.hpp"
+	"lib/obfuscator/transforms/transform.hpp"
+	"lib/obfuscator/transforms/transforms/bogus_control_flow.hpp"
+	"lib/obfuscator/transforms/transforms/constant_crypt.hpp"
+	"lib/obfuscator/transforms/transforms/decomp_break.hpp"
+	"lib/obfuscator/transforms/transforms/substitution.hpp"
+	"lib/obfuscator/transforms/transforms/util/anti_decompilers.hpp"
+	"lib/obfuscator/transforms/transforms/util/bcf.hpp"
+	"lib/obfuscator/transforms/transforms/util/opaque_predicates.hpp"
+	"lib/obfuscator/transforms/types.hpp"
+	"lib/pe/arch/arch.hpp"
+	"lib/pe/common/common.hpp"
+	"lib/pe/common/types.hpp"
+	"lib/pe/debug/debug.hpp"
+	"lib/pe/pe.hpp"
+	"lib/pe/rebuilder/detail/common.hpp"
+	"lib/pe/rebuilder/rebuilder.hpp"
+	"lib/util/defer.hpp"
+	"lib/util/files.hpp"
+	"lib/util/format.hpp"
+	"lib/util/iterators.hpp"
+	"lib/util/logger.hpp"
+	"lib/util/memory/address.hpp"
+	"lib/util/memory/reader.hpp"
+	"lib/util/passes.hpp"
+	"lib/util/platform.hpp"
+	"lib/util/progress.hpp"
+	"lib/util/random.hpp"
+	"lib/util/sections.hpp"
+	"lib/util/stopwatch.hpp"
+	"lib/util/string_parser.hpp"
+	"lib/util/structs.hpp"
+	"lib/util/types.hpp"
 	cmake.toml
 )
 
@@ -140,39 +244,12 @@ add_executable(obfuscator)
 target_sources(obfuscator PRIVATE ${obfuscator_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator_SOURCES})
 
-target_compile_definitions(obfuscator PRIVATE
-	NOMINMAX
-)
-
-target_compile_features(obfuscator PRIVATE
-	cxx_std_23
-)
-
-if(UNIX) # unix
-	target_compile_options(obfuscator PRIVATE
-		-stdlib=libc++
-	)
-endif()
-
-if(MSVC) # msvc
-	target_compile_options(obfuscator PRIVATE
-		"/wd4661"
-		"/MP"
-	)
-endif()
-
-if(UNIX) # unix
-	target_link_options(obfuscator PRIVATE
-		-fuse-ld=lld
-		"-Wl,-L/usr/local/lib/"
-	)
-endif()
-
 target_include_directories(obfuscator PRIVATE
 	"bin/"
 )
 
 target_link_libraries(obfuscator PRIVATE
+	obfuscator-project
 	obfuscator::lib
 )
 
@@ -191,7 +268,81 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"tests/func_parser/map/map.msvc.cpp"
 		"tests/func_parser/pdb/pdb.llvm.cpp"
 		"tests/func_parser/pdb/pdb.msvc.cpp"
-		"tests/tests_util.hpp"
+		"tests/units.cpp"
+		"lib/analysis/analysis.hpp"
+		"lib/analysis/bb_decomp/bb_decomp.hpp"
+		"lib/analysis/common/common.hpp"
+		"lib/analysis/common/debug.hpp"
+		"lib/analysis/common/provider.hpp"
+		"lib/analysis/lru_reg/lru_reg.hpp"
+		"lib/analysis/observer/observer.hpp"
+		"lib/analysis/passes/collect_img_references.hpp"
+		"lib/analysis/passes/collect_lookup_table.hpp"
+		"lib/analysis/passes/label_references.hpp"
+		"lib/analysis/passes/lru_reg.hpp"
+		"lib/analysis/passes/misc/bb_insn_passes.hpp"
+		"lib/analysis/passes/reloc_marker.hpp"
+		"lib/analysis/var_alloc/var_alloc.hpp"
+		"lib/cli/cli.hpp"
+		"lib/config_parser/config_parser.hpp"
+		"lib/config_parser/structs.hpp"
+		"lib/easm/assembler/assembler.hpp"
+		"lib/easm/cursor/cursor.hpp"
+		"lib/easm/debug/debug.hpp"
+		"lib/easm/disassembler/disassembler.hpp"
+		"lib/easm/easm.hpp"
+		"lib/easm/misc/misc.hpp"
+		"lib/easm/misc/reg_convert.hpp"
+		"lib/func_parser/common/combiner.hpp"
+		"lib/func_parser/common/common.hpp"
+		"lib/func_parser/common/demangler.hpp"
+		"lib/func_parser/common/sanitizer.hpp"
+		"lib/func_parser/map/map.hpp"
+		"lib/func_parser/parser.hpp"
+		"lib/func_parser/pdb/detail/parser_v7.hpp"
+		"lib/func_parser/pdb/detail/structs.hpp"
+		"lib/func_parser/pdb/pdb.hpp"
+		"lib/mathop/mathop.hpp"
+		"lib/mathop/operations/impl/util.hpp"
+		"lib/mathop/operations/operation.hpp"
+		"lib/mathop/operations/operations.hpp"
+		"lib/obfuscator/config_merger/config_merger.hpp"
+		"lib/obfuscator/function.hpp"
+		"lib/obfuscator/obfuscator.hpp"
+		"lib/obfuscator/transforms/configs.hpp"
+		"lib/obfuscator/transforms/scheduler.hpp"
+		"lib/obfuscator/transforms/transform.hpp"
+		"lib/obfuscator/transforms/transforms/bogus_control_flow.hpp"
+		"lib/obfuscator/transforms/transforms/constant_crypt.hpp"
+		"lib/obfuscator/transforms/transforms/decomp_break.hpp"
+		"lib/obfuscator/transforms/transforms/substitution.hpp"
+		"lib/obfuscator/transforms/transforms/util/anti_decompilers.hpp"
+		"lib/obfuscator/transforms/transforms/util/bcf.hpp"
+		"lib/obfuscator/transforms/transforms/util/opaque_predicates.hpp"
+		"lib/obfuscator/transforms/types.hpp"
+		"lib/pe/arch/arch.hpp"
+		"lib/pe/common/common.hpp"
+		"lib/pe/common/types.hpp"
+		"lib/pe/debug/debug.hpp"
+		"lib/pe/pe.hpp"
+		"lib/pe/rebuilder/detail/common.hpp"
+		"lib/pe/rebuilder/rebuilder.hpp"
+		"lib/util/defer.hpp"
+		"lib/util/files.hpp"
+		"lib/util/format.hpp"
+		"lib/util/iterators.hpp"
+		"lib/util/logger.hpp"
+		"lib/util/memory/address.hpp"
+		"lib/util/memory/reader.hpp"
+		"lib/util/passes.hpp"
+		"lib/util/platform.hpp"
+		"lib/util/progress.hpp"
+		"lib/util/random.hpp"
+		"lib/util/sections.hpp"
+		"lib/util/stopwatch.hpp"
+		"lib/util/string_parser.hpp"
+		"lib/util/structs.hpp"
+		"lib/util/types.hpp"
 		cmake.toml
 	)
 
@@ -200,39 +351,12 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 	target_sources(obfuscator-tests PRIVATE ${obfuscator-tests_SOURCES})
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${obfuscator-tests_SOURCES})
 
-	target_compile_definitions(obfuscator-tests PRIVATE
-		NOMINMAX
-	)
-
-	target_compile_features(obfuscator-tests PRIVATE
-		cxx_std_23
-	)
-
-	if(UNIX) # unix
-		target_compile_options(obfuscator-tests PRIVATE
-			-stdlib=libc++
-		)
-	endif()
-
-	if(MSVC) # msvc
-		target_compile_options(obfuscator-tests PRIVATE
-			"/wd4661"
-			"/MP"
-		)
-	endif()
-
-	if(UNIX) # unix
-		target_link_options(obfuscator-tests PRIVATE
-			-fuse-ld=lld
-			"-Wl,-L/usr/local/lib/"
-		)
-	endif()
-
 	target_include_directories(obfuscator-tests PRIVATE
 		"tests/"
 	)
 
 	target_link_libraries(obfuscator-tests PRIVATE
+		obfuscator-project
 		obfuscator::lib
 		GTest::gtest_main
 	)

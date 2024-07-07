@@ -1,7 +1,9 @@
 #pragma once
 #include <filesystem>
 
+#include <obfuscator/transforms/scheduler.hpp>
 #include <util/files.hpp>
+#include <util/random.hpp>
 #include <util/types.hpp>
 
 #include <gtest/gtest.h>
@@ -14,6 +16,8 @@ namespace test {
     //
     inline void start() noexcept {
         logger::enabled = false;
+        rnd::detail::seed();
+        obfuscator::startup_scheduler();
     }
 
     inline std::filesystem::path get_resources_dir() noexcept {

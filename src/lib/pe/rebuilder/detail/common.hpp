@@ -41,6 +41,6 @@ namespace pe::detail {
 
     template <typename Ty>
     [[nodiscard]] Ty* buffer_pointer(std::vector<std::uint8_t>& data) {
-        return memory::cast<Ty*>(data.data());
+        return reinterpret_cast<Ty*>(data.data());
     }
 } // namespace pe::detail
