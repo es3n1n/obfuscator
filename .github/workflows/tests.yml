@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - 'CMakeLists.txt'
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - '**/CMakeLists.txt'
+
+jobs:
+  test_cxx:
+    name: ${{ matrix.os }}, ${{ matrix.compiler }}, ${{ matrix.buildtype }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc, clang, msvc]
+        buildtype: [Debug, Release]
+        exclude:
+          # Windows is extremely slow so we will test it only with msvc
+          - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
+          # No msvc on ubuntu, duh
+          - os: ubuntu-latest
+            compiler: msvc
+    env:
+      BUILD_TYPE: ${{ matrix.buildtype }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup clang and libc++
+        if: contains(matrix.os, 'ubuntu') && matrix.compiler == 'clang'
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+          sudo apt-get install -yq --no-install-recommends libc++-19-dev libc++abi-19-dev
+          echo "CC=clang-19" >> $GITHUB_ENV
+          echo "CXX=clang++-19" >> $GITHUB_ENV
+
+      - name: Setup gcc and libstdc++
+        if: contains(matrix.os, 'ubuntu') && matrix.compiler == 'gcc'
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo add-apt-repository ppa:apt-fast/stable
+          sudo apt-get update
+          sudo apt-get install -yq --no-install-recommends apt-fast
+          sudo apt-fast install -yq --no-install-recommends gcc-13 g++-13 libstdc++-13-dev
+          echo "CC=gcc-13" >> $GITHUB_ENV
+          echo "CXX=g++-13" >> $GITHUB_ENV
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DOBFUSCATOR_BUILD_TESTS=ON -DCMKR_SKIP_GENERATION=ON
+
+      - name: Build
+        run: cmake --build build --config ${{env.BUILD_TYPE}} --parallel
+
+      - name: Test (Unix)
+        if: contains(matrix.os, 'ubuntu')
+        run: ./build/obfuscator-tests
+
+      - name: Test (Windows)
+        if: contains(matrix.os, 'windows')
+        run: .\build\${{ env.BUILD_TYPE }}\obfuscator-tests.exe

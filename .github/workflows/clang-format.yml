@@ -1,0 +1,30 @@
+name: clang-format
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/clang-format.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - '**/CMakeLists.txt'
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/clang-format.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - '**/CMakeLists.txt'
+
+jobs:
+  test_cxx:
+    name: Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jidicula/clang-format-action@v4.11.0
+        with:
+          clang-format-version: '19'

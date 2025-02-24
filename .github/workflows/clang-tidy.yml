@@ -1,0 +1,56 @@
+name: clang-tidy
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/clang-tidy.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - '**/CMakeLists.txt'
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/clang-tidy.yml'
+      - 'cmake/**'
+      - 'src/**'
+      - 'vendor/**'
+      - '**/CMakeLists.txt'
+
+jobs:
+  test_cxx:
+    name: Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup clang and libc++
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19
+          sudo apt-get install -yq --no-install-recommends libc++-19-dev libc++abi-19-dev clang-tidy-19
+          echo "CC=clang-19" >> $GITHUB_ENV
+          echo "CXX=clang++-19" >> $GITHUB_ENV
+
+      - name: Generate build
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -OBFUSCATOR_BUILD_TESTS=ON -DCMKR_SKIP_GENERATION=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Run clang tidy
+        run: |
+          wget https://raw.githubusercontent.com/llvm/llvm-project/refs/heads/release/19.x/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py
+          python3 run-clang-tidy.py \
+            -clang-tidy-binary clang-tidy-19 \
+            -p build \
+            -j 12 \
+            -extra-arg="-std=c++23" \
+            -extra-arg="-stdlib=libc++" \
+            -header-filter="src/lib|src/bin|src/tests" \
+            -q \
+            -allow-no-checks
