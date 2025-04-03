@@ -31,6 +31,7 @@ In case of unexpected exit without any error message or in case you feel lucky, 
 ```commandline
 obfuscator hehe.exe -pdb hehe.pdb -f main -t ConstantCrypt -v chance 55
 ```
+
 ## Writeup
 - [https://blog.es3n1n.eu/posts/obfuscator-pt-1](https://blog.es3n1n.eu/posts/obfuscator-pt-1)
 
