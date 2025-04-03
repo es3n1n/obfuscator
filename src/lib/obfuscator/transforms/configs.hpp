@@ -117,7 +117,7 @@ namespace obfuscator {
         std::uint8_t repeat_times_ = repeat_times_default_;
 
         /// \brief Transform run chance in percents
-        std::uint8_t chance_default_ = 30; // (from 0 to 100)%
+        std::uint8_t chance_default_ = 100; // (from 0 to 100)%
         std::uint8_t chance_ = chance_default_;
     };
 

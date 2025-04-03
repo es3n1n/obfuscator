@@ -27,6 +27,10 @@ Examples:
     obfuscator hehe.exe -map mymap.map -pdb mypdb.pdb -f main -t TransformName -v SomeName 1337 -v SomeName0 1337 -g TransformName -v SomeGlobalName 1337
 ```
 
+In case of unexpected exit without any error message or in case you feel lucky, try adjusting the chances. E.g.:
+```commandline
+obfuscator hehe.exe -pdb hehe.pdb -f main -t ConstantCrypt -v chance 55
+```
 ## Writeup
 - [https://blog.es3n1n.eu/posts/obfuscator-pt-1](https://blog.es3n1n.eu/posts/obfuscator-pt-1)
 
