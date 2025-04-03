@@ -8,6 +8,7 @@ namespace pe {
         void init_header(ImgWrapped image, std::vector<std::uint8_t>& data);
         void copy_sections(ImgWrapped image, std::vector<std::uint8_t>& data);
         void update_checksum(ImgWrapped image, std::vector<std::uint8_t>& data);
+        void metadata_pwn(ImgWrapped image, std::vector<std::uint8_t>& data);
     } // namespace detail
 
     template <any_image_t Img>
@@ -24,7 +25,7 @@ namespace pe {
         // Init result data
         //
         std::vector<std::uint8_t> result = {};
-        auto progress = progress::Progress("pe: rebuilding", 4);
+        auto progress = progress::Progress("pe: rebuilding", 5);
 
         // Updating .reloc section
         //
@@ -44,6 +45,11 @@ namespace pe {
         // Update checksum
         //
         detail::update_checksum(ctx.wrap(), result);
+        progress.step();
+
+        /// Wipe metadata
+        //
+        detail::metadata_pwn(ctx.wrap(), result);
         progress.step();
 
         // We are done here
