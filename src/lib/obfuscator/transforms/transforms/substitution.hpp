@@ -148,7 +148,6 @@ namespace obfuscator::transforms {
             });
         }
 
-
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
