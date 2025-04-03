@@ -114,7 +114,40 @@ namespace obfuscator::transforms {
                 /// mov to x
                 as->emit(zasm::Instruction(ZYDIS_MNEMONIC_AND, 2, {op1, op2_wrap.operand}));
             });
+
+            /*
+             * -x = ~x + 1
+             * -x = ~(x-1)
+             * * -x = x * -1
+             * -x = 0 - x - not implemented yet.
+             */
+            replacements[ZYDIS_MNEMONIC_NEG].emplace_back([](Function<Img>* func, analysis::insn_t* insn) -> void {
+                auto da_reg = insn->ref->getOperand<zasm::Reg>(0);
+                auto* as = *func->cursor->instead_of(insn->node_ref);
+
+                switch (rnd::number(1, 3)) {
+                case 1: {
+                    /// -x = ~x + 1
+                    as->emit(zasm::Instruction(ZYDIS_MNEMONIC_NOT, 1, {da_reg}));
+                    as->emit(zasm::Instruction(ZYDIS_MNEMONIC_ADD, 2, {da_reg, zasm::Imm(1)}));
+                    break;
+                }
+                case 2: {
+                    /// -x = ~(x-1)
+                    as->emit(zasm::Instruction(ZYDIS_MNEMONIC_DEC, 1, {da_reg}));
+                    as->emit(zasm::Instruction(ZYDIS_MNEMONIC_NOT, 1, {da_reg}));
+                    break;
+                }
+                case 3: {
+                    /// -x = x * -1
+                    as->emit(zasm::Instruction(ZYDIS_MNEMONIC_IMUL, 3, {da_reg, da_reg, (zasm::Imm(-1))}));
+                    break;
+                }
+                default:;
+                }
+            });
         }
+
 
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
