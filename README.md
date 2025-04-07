@@ -19,12 +19,14 @@ Available options:
     -t           [name]          -- Start new transform configuration
     -g           [name]          -- Start new transform global configuration
     -v           [name] [value]  -- Push value
+    -seed        [value]         -- Set random seed
  
 Examples:
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337 -g TransformName -v SomeGlobalName 1337
     obfuscator hehe.exe -f main -t TransformName -v SomeName 1337 -v SomeName0 1337 -g TransformName -v SomeGlobalName 1337
     obfuscator hehe.exe -map mymap.map -pdb mypdb.pdb -f main -t TransformName -v SomeName 1337 -v SomeName0 1337 -g TransformName -v SomeGlobalName 1337
+    obfuscator hehe.exe -map mymap.map -pdb mypdb.pdb -f main -seed 0xcb91ccbef7cbcdc1
 ```
 
 In case of unexpected exit without any error message or in case you feel lucky, try adjusting the chances. E.g.:

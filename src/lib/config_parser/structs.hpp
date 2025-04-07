@@ -17,6 +17,7 @@ namespace config_parser {
 
     struct obfuscator_config_t {
         std::filesystem::path binary_path = "";
+        std::optional<std::uint64_t> seed = std::nullopt;
     };
 
     struct func_parser_config_t {

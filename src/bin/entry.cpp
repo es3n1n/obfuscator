@@ -19,7 +19,9 @@ namespace {
     }
 
     int startup(config_parser::Config& config) try {
-        const auto binary_path = config.obfuscator_config().binary_path;
+        rnd::detail::seed(config.obfuscator_config().seed);
+        
+        const auto& binary_path = config.obfuscator_config().binary_path;
 
         logger::info("main: loading binary from {}", binary_path.string());
         auto file = files::read_file(binary_path);
@@ -48,7 +50,6 @@ namespace {
 } // namespace
 
 int main(const int argc, const char* argv[]) try {
-    rnd::detail::seed();
     obfuscator::startup_scheduler();
 
     auto config = config_parser::from_argv(argc, argv);
