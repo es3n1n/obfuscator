@@ -17,7 +17,7 @@ namespace config_parser {
 
         /// Allocate result
         Config result = {};
-        auto& [binary_path_value] = result.obfuscator_config();
+        auto& [binary_path_value, seed] = result.obfuscator_config();
         auto& func_parser_config = result.func_parser_config();
 
         /// Get some stuff for transforms resolving
@@ -112,6 +112,26 @@ namespace config_parser {
             if (arg_ == "-v" && next_arg_.has_value() && next_next_arg_.has_value() && state.current_transform != nullptr) {
                 state.current_transform->values[next_arg_.value()] = next_next_arg_.value();
                 skip(2);
+            }
+
+            if (arg_ == "-seed" && next_arg_.has_value()) {
+                /// \todo @sovissa:
+                /// [1] add correct processing of literals to string_parser
+                /// [2] add support for negative values to arg parser
+                std::size_t seed_value_base = 10;
+                {
+                    std::string_view next_arg_view{next_arg_.value()};
+                    if (next_arg_view.starts_with('-'))
+                        next_arg_view = next_arg_view.substr(1);
+
+                    if (next_arg_view.length() >= 2
+                        && (next_arg_view.starts_with("0x") || next_arg_view.starts_with("0X")))
+                        seed_value_base = 16;
+                }
+
+                seed = string_parser::parse_uint64(next_arg_.value(), seed_value_base);
+                skip(1);
+                continue;
             }
         }
 
