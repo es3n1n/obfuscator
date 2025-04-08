@@ -29,7 +29,7 @@ namespace pe::detail {
             std::memset(&optional_header->checksum, 0, 4);
 
             /// Wipe section names
-            auto* sections = out_img->get_nt_headers()->get_sections();
+            auto* sections = nt_headers->get_sections();
             for (std::size_t i = 0; i < std::max(static_cast<std::size_t>(file_header->num_sections), image->sections.size()); ++i) {
                 std::memset(&sections[i].name, 0, sizeof(sections[i].name));
             }
