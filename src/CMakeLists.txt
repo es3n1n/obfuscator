@@ -50,7 +50,6 @@ set(obfuscator-lib_SOURCES
 	"lib/pe/rebuilder/detail/copy_sections.cpp"
 	"lib/pe/rebuilder/detail/erase_metadata.cpp"
 	"lib/pe/rebuilder/detail/init_header.cpp"
-	"lib/pe/rebuilder/detail/metadata_pwn.cpp"
 	"lib/pe/rebuilder/detail/update_checksum.cpp"
 	"lib/pe/rebuilder/detail/update_relocations.cpp"
 	"lib/analysis/analysis.hpp"
