@@ -7,7 +7,7 @@
 namespace config_parser {
     class Config {
     public:
-        DEFAULT_CTOR_DTOR(Config);
+        DEFAULT_CT_CTOR_DTOR(Config);
         DEFAULT_COPY(Config);
 
         [[nodiscard]] function_configuration_t& create_function_config() {
@@ -51,11 +51,11 @@ namespace config_parser {
         }
 
     private:
-        std::vector<function_configuration_t> function_configurations_ = {};
-        std::vector<transform_configuration_t> global_transform_configurations_ = {};
+        std::vector<function_configuration_t> function_configurations_;
+        std::vector<transform_configuration_t> global_transform_configurations_;
         obfuscator_config_t obfuscator_config_ = {};
         func_parser_config_t func_parser_config_ = {};
     };
 
-    Config from_argv(std::size_t argc, char* argv[]);
+    Config from_argv(std::size_t argc, const char* argv[]);
 } // namespace config_parser

@@ -1,14 +1,11 @@
+#include <cassert>
 #include <regex>
 
 #include "func_parser/map/map.hpp"
-#include "util/logger.hpp"
-#include "util/memory/casts.hpp"
-
-#include <cassert>
+#include <es3n1n/common/logger.hpp>
 
 namespace func_parser::map {
     namespace {
-
         // Extracting `0001` segment index, `00000000` segment offset and `main` from
         // `0001:00000000 main 0000000140001000 f FileName.obj`
         //
@@ -23,15 +20,15 @@ namespace func_parser::map {
     function_list_t discover_functions(const std::filesystem::path& map_path, const std::vector<pe::section_t>& sections) {
         // Reading map file
         //
-        const auto map_content = util::read_file(map_path);
-        if (map_content.empty()) {
+        const auto map_content = files::read_file(map_path);
+        if (!map_content.has_value() || map_content->empty()) {
             throw std::runtime_error("Empty map file");
         }
 
         // Converting to string stream
         //
         std::stringstream str_stream;
-        str_stream.str(std::string{memory::cast<const char*>(map_content.data()), map_content.size()});
+        str_stream.str(std::string{reinterpret_cast<const char*>(map_content->data()), map_content->size()});
 
         // Initializing func_parser state
         //

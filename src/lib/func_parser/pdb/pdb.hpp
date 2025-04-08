@@ -1,7 +1,7 @@
 #pragma once
 #include "func_parser/common/common.hpp"
 #include "pe/pe.hpp"
-#include "util/files.hpp"
+#include <es3n1n/common/files.hpp>
 
 // \todo: @es3n1n: validate that the pdb could be used for provided file
 // \todo: @es3n1n: add custom pdb server support?

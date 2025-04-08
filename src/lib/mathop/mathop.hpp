@@ -1,7 +1,6 @@
 #pragma once
 #include "mathop/operations/operations.hpp"
-#include "util/random.hpp"
-#include "util/types.hpp"
+#include <es3n1n/common/random.hpp>
 
 #include <vector>
 
@@ -33,7 +32,7 @@ namespace mathop {
         /// \param assembler zasm assembler
         /// \param dst_reg destination register
         void lift_revert(zasm::x86::Assembler* assembler, const zasm::x86::Gp dst_reg) const {
-            return operation_->lift_revert(assembler, dst_reg, lift_rhs_);
+            operation_->lift_revert(assembler, dst_reg, lift_rhs_);
         }
 
         /// \brief Get the emulation argument
@@ -86,7 +85,7 @@ namespace mathop {
     /// \brief Expression with operations
     class Expression {
     public:
-        DEFAULT_CTOR_DTOR(Expression);
+        DEFAULT_CT_CTOR_DTOR(Expression);
         DEFAULT_COPY(Expression);
 
         /// \brief Emplace new operation
@@ -103,7 +102,7 @@ namespace mathop {
         [[nodiscard]] ArgumentImm emulate(const ArgumentImm start_value) const {
             ArgumentImm result = start_value;
 
-            for (auto& operation : operations_) {
+            for (const auto& operation : operations_) {
                 result = operation.emulate(result);
             }
 
@@ -146,7 +145,7 @@ namespace mathop {
 
     private:
         /// \brief A list of operations
-        std::vector<OperationValue> operations_ = {};
+        std::vector<OperationValue> operations_;
     };
 
     /// \brief Expression generator
@@ -175,7 +174,7 @@ namespace mathop {
 
             /// Generate the random expressions
             for (std::size_t i = 0; i < num_operations; ++i) {
-                auto& operation = rnd::item(operations_);
+                const auto& operation = rnd::item(operations_);
                 result.emplace_operation(operation.get(), bit_size);
             }
 
@@ -184,6 +183,6 @@ namespace mathop {
 
     private:
         /// \brief List of supported operations
-        std::vector<std::unique_ptr<Operation>> operations_ = {};
+        std::vector<std::unique_ptr<Operation>> operations_;
     };
 } // namespace mathop

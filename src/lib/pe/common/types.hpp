@@ -1,7 +1,7 @@
 #pragma once
-#include "util/memory/address.hpp"
 #include "util/structs.hpp"
 #include "util/types.hpp"
+#include <es3n1n/common/memory/address.hpp>
 #include <linuxpe>
 #include <optional>
 
@@ -35,8 +35,8 @@
 namespace pe {
     struct relocation_t {
         memory::address rva;
-        std::uint8_t size; // in bytes
-        win::reloc_type_id type;
+        std::uint8_t size = 0; // in bytes
+        win::reloc_type_id type = win::reloc_type_id::rel_based_absolute;
     };
 
     struct dir_properties_t {
@@ -45,23 +45,23 @@ namespace pe {
     };
 
     struct section_t {
-        DEFAULT_CTOR_DTOR(section_t);
+        DEFAULT_CT_CTOR_DTOR(section_t);
         DEFAULT_COPY(section_t);
 
         explicit section_t(const win::section_header_t& header)
             : virtual_size(header.virtual_size), virtual_address(header.virtual_address), size_raw_data(header.size_raw_data),
               ptr_raw_data(header.ptr_raw_data), characteristics(header.characteristics) {
-            std::memcpy(name.data(), header.name.short_name, name.size() * sizeof(decltype(name)::value_type));
+            std::memcpy(name.data(), reinterpret_cast<const char*>(header.name.short_name), name.size() * sizeof(decltype(name)::value_type));
         }
 
-        std::array<char, LEN_SHORT_STR> name = {'\0'};
+        std::array<char, LEN_SHORT_STR> name = {};
         std::uint32_t virtual_size = 0U;
         std::uint32_t virtual_address = 0U;
         std::uint32_t size_raw_data = 0U;
         std::uint32_t ptr_raw_data = 0U;
-        win::section_characteristics_t characteristics = {0U};
+        win::section_characteristics_t characteristics = {};
 
-        std::vector<std::uint8_t> raw_data = {};
+        std::vector<std::uint8_t> raw_data;
 
         /// This struct contains directory offsets within the section, i.e
         /// If a section contains import descriptors the value of iat would be set
@@ -101,7 +101,7 @@ namespace pe {
         }
 
         template <typename Ty>
-            requires(types::is_any_of_v<Ty, win::optional_header_x64_t, win::optional_header_x86_t>)
+            requires(traits::is_any_of_v<Ty, win::optional_header_x64_t, win::optional_header_x86_t>)
         void export_contained_dir(Ty* optional_header) {
             auto set = [this, &optional_header](win::directory_id dir_id, const dir_properties_t props) -> void {
                 auto& dir = optional_header->data_directories.entries[dir_id];
@@ -122,7 +122,7 @@ namespace pe {
         explicit operator win::section_header_t() const {
             win::section_header_t result{};
 
-            std::ranges::copy(name, result.name.short_name);
+            std::ranges::copy(name, reinterpret_cast<char*>(result.name.short_name));
             result.virtual_size = virtual_size;
             result.virtual_address = virtual_address;
             result.size_raw_data = size_raw_data;

@@ -10,7 +10,7 @@ namespace func_parser {
         constexpr function_t() = default;
 
         bool valid = false;
-        std::string name = {};
+        std::string name;
         std::uint64_t rva = 0;
         std::optional<std::size_t> size = std::nullopt;
 

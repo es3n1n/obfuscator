@@ -10,7 +10,7 @@ namespace obfuscator {
         DEFAULT_COPY(TransformFeaturesSet);
 
         /// \brief Available features
-        enum Index {
+        enum Index : std::uint8_t {
             HAS_FUNCTION_TRANSFORM = 0,
             HAS_BB_TRANSFORM,
             HAS_NODE_TRANSFORM,
@@ -27,7 +27,7 @@ namespace obfuscator {
 
     private:
         /// \brief Features storage, by default it would initialize values to false
-        std::unordered_map<Index, bool> values_ = {};
+        std::unordered_map<Index, bool> values_;
     };
 
     /// \brief Transform context that gets passed to the transform callback
@@ -50,7 +50,7 @@ namespace obfuscator {
     template <pe::any_image_t Img>
     class Transform {
     public:
-        DEFAULT_CTOR(Transform);
+        DEFAULT_CT_CTOR(Transform);
         NON_COPYABLE(Transform);
         virtual ~Transform() = default;
 
@@ -150,9 +150,9 @@ namespace obfuscator {
 
     private:
         /// \brief Features set
-        TransformFeaturesSet features_set_ = {};
+        TransformFeaturesSet features_set_;
         /// \brief Config vars storage
-        TransformConfig config_ = {};
+        TransformConfig config_;
     };
 
     /// \brief Function obfuscation transform. This class automatically discards bb/node/insn callbacks,
@@ -169,13 +169,13 @@ namespace obfuscator {
         }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext&, Function<Img>*, analysis::bb_t*) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext&, Function<Img>*, zasm::Node*) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext&, Function<Img>*, analysis::insn_t*) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief BB obfuscation transform.
@@ -192,13 +192,13 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext&, Function<Img>*) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext&, Function<Img>*, zasm::Node*) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext&, Function<Img>*, analysis::insn_t*) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief Node obfuscation transform.
@@ -215,13 +215,13 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext&, Function<Img>*) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext&, Function<Img>*, analysis::bb_t*) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext&, Function<Img>*, analysis::insn_t*) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief Instruction obfuscation transform.
@@ -238,12 +238,12 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext&, Function<Img>*) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext&, Function<Img>*, analysis::bb_t*) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext&, Function<Img>*, zasm::Node*) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
     };
 } // namespace obfuscator

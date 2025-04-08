@@ -1,7 +1,7 @@
 #pragma once
 #include "obfuscator/transforms/configs.hpp"
 #include "obfuscator/transforms/scheduler.hpp"
-#include "util/logger.hpp"
+#include <es3n1n/common/logger.hpp>
 
 namespace cli {
     namespace detail {
@@ -22,8 +22,8 @@ namespace cli {
             logger::info("Available {} transforms:", platform_name);
 
             /// Iterate over the transforms
-            auto& scheduler = obfuscator::TransformScheduler::get().for_arch<Img>();
-            for (auto& [tag, transform] : scheduler.transforms) {
+            for (auto& scheduler = obfuscator::TransformScheduler::get().for_arch<Img>(); //
+                 auto& [tag, transform] : scheduler.transforms) {
                 /// Get the shared cfg
                 auto& shared_cfg = obfuscator::TransformSharedConfigStorage::get().get_for(tag);
 
@@ -61,7 +61,7 @@ namespace cli {
         }
     } // namespace detail
 
-    inline void print_help(char* argv[]) {
+    inline void print_help(const char* argv[]) {
         logger::enabled = true; // just to be sure
         logger::info("github.com/es3n1n/obfuscator - A PoC native code obfuscator");
         auto pad = [] {
@@ -73,7 +73,7 @@ namespace cli {
         pad();
 
         logger::info("Available options:");
-        for (auto& [args, desc] : detail::kCLIOptionsHelp) {
+        for (const auto& [args, desc] : detail::kCLIOptionsHelp) {
             logger::info<1>("{:<12} {:<6} {:<8} -- {}", args[0], args[1], args[2], desc);
         }
         pad();

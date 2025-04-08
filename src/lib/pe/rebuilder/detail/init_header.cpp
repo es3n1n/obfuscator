@@ -35,6 +35,6 @@ namespace pe::detail {
     } // namespace
 
     void init_header(const ImgWrapped image, std::vector<std::uint8_t>& data) {
-        return UNWRAP_IMAGE(void, init_header_);
+        UNWRAP_IMAGE(void, init_header_);
     }
 } // namespace pe::detail

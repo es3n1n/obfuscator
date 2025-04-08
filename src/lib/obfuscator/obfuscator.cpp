@@ -4,9 +4,10 @@
 #include "obfuscator/config_merger/config_merger.hpp"
 #include "obfuscator/function.hpp"
 #include "obfuscator/transforms/scheduler.hpp"
-#include "util/logger.hpp"
-#include "util/progress.hpp"
-#include "util/random.hpp"
+
+#include <es3n1n/common/logger.hpp>
+#include <es3n1n/common/progress.hpp>
+#include <es3n1n/common/random.hpp>
 
 namespace obfuscator {
     constexpr size_t kTextSectionAlignment = 0x10;
@@ -23,7 +24,7 @@ namespace obfuscator {
 
         // Add functions from config, that we should protecc
         //
-        auto analysis_progress = util::Progress("obfuscator: setting up functions", config_.size());
+        auto analysis_progress = progress::Progress("obfuscator: setting up functions", config_.size());
         for (auto& configuration : config_) {
             add_function(configuration);
             analysis_progress.step();
@@ -93,7 +94,7 @@ namespace obfuscator {
             auto transforms = scheduler.select_transforms(tags);
 
             /// Init the progress bar
-            auto progress = util::Progress(std::format("obfuscator: obfuscating {}", obf_func.parsed_func.name), transforms.size());
+            auto progress = progress::Progress(std::format("obfuscator: obfuscating {}", obf_func.parsed_func.name), transforms.size());
 
             /// An util that would check the chances and all this other crap, that would be
             /// needed for like  every possible function/transform
@@ -184,7 +185,7 @@ namespace obfuscator {
     template <pe::any_image_t Img>
     void Instance<Img>::assemble() {
         /// Estimating section size
-        auto size_estimation_progress = util::Progress("obfuscator: estimating section size", functions_.size());
+        auto size_estimation_progress = progress::Progress("obfuscator: estimating section size", functions_.size());
         std::size_t section_size = 0;
         for (auto& func : functions_) {
             const auto program_size = easm::estimate_program_size(*func.analysed.program);
@@ -199,28 +200,31 @@ namespace obfuscator {
         memory::address virt_address = new_sec.virtual_address;
 
         /// Iterate over the obfuscated functions
-        auto linking_progress = util::Progress("obfuscator: linking functions", functions_.size());
+        auto linking_progress = progress::Progress("obfuscator: linking functions", functions_.size());
         for (auto& [func, _] : functions_) {
             /// \todo @es3n1n: perhaps i should split this monstrosity into a separate functions
 
             /// Erase the original function code
             for (auto& basic_block : *func.bb_storage) {
                 for (auto& insn : basic_block) {
+                    /// Clang-tidy is working a bit weird with smart pointers and `bugprone-unchecked-optional-access`
+                    auto* raw_ptr = insn.get();
+
                     /// No need to erase instructions that doesn't exist
-                    if (!insn->rva.has_value()) {
+                    if (!raw_ptr->rva.has_value() || !raw_ptr->length.has_value()) {
                         continue;
                     }
 
                     /// Generate random bytes
-                    const auto randomized = rnd::bytes(*insn->length);
+                    const auto randomized = rnd::bytes(*raw_ptr->length);
 
                     /// Replace instruction with junk
-                    auto* insn_ptr = image_->rva_to_ptr(*insn->rva);
+                    auto* insn_ptr = image_->rva_to_ptr(*raw_ptr->rva);
                     std::memcpy(insn_ptr, randomized.data(), randomized.size());
 
                     /// Remove pe relocation, if there's any
-                    if (insn->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
-                        image_->relocations.erase(*insn->rva + insn->reloc.offset.value_or(0));
+                    if (raw_ptr->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
+                        image_->relocations.erase(*raw_ptr->rva + raw_ptr->reloc.offset.value_or(0));
                     }
                 }
             }
@@ -234,7 +238,7 @@ namespace obfuscator {
             std::memcpy(func_start_ptr, jmp_data->data(), jmp_data->size());
 
             /// Assemble the obfuscated function
-            auto assemble_progress = util::Progress(std::format("obfuscator: assembling {}", func.parsed_func.name), 1);
+            auto assemble_progress = progress::Progress(std::format("obfuscator: assembling {}", func.parsed_func.name), 1);
             const auto assembled = easm::assemble_program(virt_address + img_base, *func.program);
             assemble_progress.step();
 
@@ -248,7 +252,7 @@ namespace obfuscator {
             /// Save the new relocations
             for (const zasm::RelocationInfo& relocation : assembled.relocations) {
                 /// Map zasm relocation kind to windows relocation kind
-                win::reloc_type_id win_reloc_type;
+                win::reloc_type_id win_reloc_type; // NOLINT(cppcoreguidelines-init-variables)
                 switch (relocation.kind) {
                 default:
                 case zasm::RelocationType::None:
@@ -280,7 +284,7 @@ namespace obfuscator {
     }
 
     template <pe::any_image_t Img>
-    void Instance<Img>::save() {
+    std::filesystem::path Instance<Img>::save() {
         logger::info("obfuscator: saving..");
         auto new_img = image_->rebuild_pe_image();
 
@@ -293,9 +297,18 @@ namespace obfuscator {
         const auto new_filename = filename_no_ext + ".protected" + file_ext;
 
         out_path = out_path.replace_filename(new_filename);
-        util::write_file(out_path, new_img.data(), new_img.size());
+        files::write_file(out_path, new_img.data(), new_img.size());
 
         logger::info("obfuscator: saved output to {}", out_path.string());
+        return out_path;
+    }
+
+    template <pe::any_image_t Img>
+    std::filesystem::path Instance<Img>::run() {
+        setup();
+        obfuscate();
+        assemble();
+        return save();
     }
 
     PE_DECL_TEMPLATE_CLASSES(Instance);

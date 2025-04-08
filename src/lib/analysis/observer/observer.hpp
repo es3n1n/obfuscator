@@ -90,14 +90,16 @@ namespace analysis {
                 if (auto [bb, insn] = *prev_pair; //
                     ((*insn)->is_jump() && !(*insn)->is_conditional_jump()) || //
                     !next_pair.has_value()) {
-                    return insert_to(bb, insn + 1); // +1 because we want to insert it **after** the prev item
+                    insert_to(bb, insn + 1); // +1 because we want to insert it **after** the prev item
+                    return;
                 }
             }
 
             if (next_pair.has_value()) {
                 /// Oh well, just insert it before the `next` insn
                 auto [bb, insn] = *next_pair;
-                return insert_to(bb, insn);
+                insert_to(bb, insn);
+                return;
             }
 
             throw std::runtime_error("observer: unable to process prev/next nodes [inserted]");
@@ -106,12 +108,12 @@ namespace analysis {
         /// <summary>
         /// This is called after a node has been created.
         /// </summary>
-        void onNodeCreated(zasm::Node*) override { }
+        void onNodeCreated(zasm::Node* /*node*/) override { }
 
         /// <summary>
         /// This is called before a node is detached.
         /// </summary>
-        void onNodeDetach(zasm::Node*) override { }
+        void onNodeDetach(zasm::Node* /*node*/) override { }
 
         /// \brief Stop the observer
         void stop() {
@@ -140,8 +142,9 @@ namespace analysis {
             const auto* insn_ref = node->getIf<zasm::Instruction>();
             while (node != nullptr && insn_ref == nullptr) {
                 node = next(node);
-                if (node != nullptr)
+                if (node != nullptr) {
                     insn_ref = node->getIf<zasm::Instruction>();
+                }
             }
 
             /// No node
@@ -153,7 +156,7 @@ namespace analysis {
             auto* insn_info = node->getUserData<insn_t>();
             if (insn_info == nullptr || insn_info->bb_ref == nullptr) [[unlikely]] {
                 assert(false); // huh?
-                return std::nullopt;
+                std::unreachable();
             }
 
             /// Return info
@@ -168,11 +171,11 @@ namespace analysis {
 
         /// \brief Zasm program instance that we're gonna analyze each time
         /// an obfuscation transform creates/destroys something
-        std::shared_ptr<zasm::Program> program_ = {};
+        std::shared_ptr<zasm::Program> program_;
         /// \brief A reference to the basic block storage
-        std::shared_ptr<bb_storage_t> bb_storage_ = {};
+        std::shared_ptr<bb_storage_t> bb_storage_;
         /// \brief BB Provider reference
-        std::shared_ptr<functional_bb_provider_t> bb_provider_ = {};
+        std::shared_ptr<functional_bb_provider_t> bb_provider_;
         /// \brief Start/stop
         bool stopped_ = false;
     };

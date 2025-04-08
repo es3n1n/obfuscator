@@ -38,7 +38,7 @@ namespace easm {
                 return std::nullopt;
             }
 
-            const auto prev_node = node->getPrev();
+            auto* const prev_node = node->getPrev();
             if (prev_node == nullptr) {
                 return std::nullopt;
             }
@@ -84,7 +84,7 @@ namespace easm {
         }
 
     private:
-        std::shared_ptr<zasm::Program> program_ = {};
-        std::shared_ptr<zasm::x86::Assembler> assembler_ = {};
+        std::shared_ptr<zasm::Program> program_;
+        std::shared_ptr<zasm::x86::Assembler> assembler_;
     };
 } // namespace easm

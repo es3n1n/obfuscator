@@ -1,13 +1,14 @@
 #pragma once
 #include "pe/rebuilder/detail/common.hpp"
-#include "util/progress.hpp"
+#include <es3n1n/common/progress.hpp>
 
 namespace pe {
     namespace detail {
-        void update_relocations(ImgWrapped, std::vector<std::uint8_t>& data);
+        void update_relocations(ImgWrapped /*image*/, std::vector<std::uint8_t>& data);
         void init_header(ImgWrapped image, std::vector<std::uint8_t>& data);
         void copy_sections(ImgWrapped image, std::vector<std::uint8_t>& data);
         void update_checksum(ImgWrapped image, std::vector<std::uint8_t>& data);
+        void erase_metadata(ImgWrapped image, std::vector<std::uint8_t>& data);
     } // namespace detail
 
     template <any_image_t Img>
@@ -24,7 +25,7 @@ namespace pe {
         // Init result data
         //
         std::vector<std::uint8_t> result = {};
-        auto progress = util::Progress("pe: rebuilding", 4);
+        auto progress = progress::Progress("pe: rebuilding", 5);
 
         // Updating .reloc section
         //
@@ -44,6 +45,11 @@ namespace pe {
         // Update checksum
         //
         detail::update_checksum(ctx.wrap(), result);
+        progress.step();
+
+        /// Wipe metadata
+        //
+        detail::erase_metadata(ctx.wrap(), result);
         progress.step();
 
         // We are done here

@@ -71,6 +71,6 @@ namespace pe::detail {
     } // namespace
 
     void copy_sections(const ImgWrapped image, std::vector<std::uint8_t>& data) {
-        return UNWRAP_IMAGE(void, copy_sections_);
+        UNWRAP_IMAGE(void, copy_sections_);
     }
 } // namespace pe::detail

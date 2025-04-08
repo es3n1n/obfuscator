@@ -11,7 +11,7 @@
 namespace analysis::passes {
     template <pe::any_image_t Img>
     struct bb_insn_passes_t {
-        DEFAULT_CTOR_DTOR(bb_insn_passes_t);
+        DEFAULT_CT_CTOR_DTOR(bb_insn_passes_t);
         NON_COPYABLE(bb_insn_passes_t);
 
         static bool apply(Function<Img>* function, Img* image);

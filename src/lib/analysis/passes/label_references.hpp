@@ -6,10 +6,10 @@
 namespace analysis::passes {
     template <pe::any_image_t Img>
     struct label_references_t {
-        DEFAULT_CTOR_DTOR(label_references_t);
+        DEFAULT_CT_CTOR_DTOR(label_references_t);
         NON_COPYABLE(label_references_t);
 
-        static bool apply(Function<Img>* function, Img*) {
+        static bool apply(Function<Img>* function, Img* /*image*/) {
             // Iterating over referenced RVAs within the function
             //
             for (const auto& [referenced_insn_rva, insn_ptrs] : function->image_references) {
@@ -44,6 +44,7 @@ namespace analysis::passes {
                     throw std::runtime_error("analysis: Unable to find referenced insn");
                 }
                 function->program.get()->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
+                referenced_insn->second->bb_ref->push_label(*referenced_loc_label_node, function->bb_provider.get());
 
                 // Iterating over instructions that referenced this RVA
                 //

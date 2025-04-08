@@ -1,4 +1,4 @@
-# es3n1n's clang-format, last upd 29 jun 2023 11:20:59
+# es3n1n's clang-format -- 29 jun 2023 11:20:59 -- https://pastebin.com/4mtxipKe
 ---
 AlignAfterOpenBracket: Align
 AlignEscapedNewlines: Left
@@ -20,7 +20,7 @@ BasedOnStyle: WebKit
 BinPackArguments: true
 BinPackParameters: true
 BitFieldColonSpacing: None
-BraceWrapping: 
+BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
   AfterControlStatement: Never

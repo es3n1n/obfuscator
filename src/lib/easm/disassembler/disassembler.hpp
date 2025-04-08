@@ -6,7 +6,7 @@
 #include <zasm/zasm.hpp>
 
 namespace easm {
-    constexpr zasm::MachineMode kDefaultMm = zasm::MachineMode::AMD64;
+    constexpr auto kDefaultMm = zasm::MachineMode::AMD64;
     constexpr size_t kDefaultSize = 15;
 
     class Decoder {

@@ -44,9 +44,9 @@ namespace obfuscator::transform_util {
         };
 
         /// Iterating over the nodes
-        for (auto cur = assembler->getCursor(); cur != nullptr && cur != last; cur = cur->getNext()) {
+        for (auto* cur = assembler->getCursor(); cur != nullptr && cur != last; cur = cur->getNext()) {
             /// Set the cursor, get the node
-            auto insn = cur->getIf<zasm::Instruction>();
+            auto* insn = cur->getIf<zasm::Instruction>();
 
             /// Not an instruction
             if (insn == nullptr) {
@@ -54,7 +54,7 @@ namespace obfuscator::transform_util {
             }
 
             /// Get the imm
-            auto imm = insn->getOperandIf<zasm::Imm>(1);
+            auto* imm = insn->getOperandIf<zasm::Imm>(1);
             if (imm == nullptr) {
                 continue;
             }

@@ -1,5 +1,5 @@
 #include "mathop/operations/impl/util.hpp"
-#include "util/random.hpp"
+#include <es3n1n/common/random.hpp>
 
 namespace mathop::operations {
     /// \brief Emulate the math operation under the two operands
@@ -9,8 +9,9 @@ namespace mathop::operations {
     ArgumentImm Xor::emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const {
         ArgumentImm result;
         std::visit(
-            [&]<typename Ty>(Ty&& op1_value) -> void { //
-                result.emplace<std::decay_t<Ty>>(op1_value ^ std::get<std::decay_t<Ty>>(*op2));
+            [&]<typename Ty>(Ty op1_value) -> void { //
+                // \todo @es3n1n: Add unsigned safe casts
+                result.emplace<std::decay_t<Ty>>(op1_value ^ std::get<std::decay_t<Ty>>(*op2)); // NOLINT(hicpp-signed-bitwise)
             },
             op1);
         return result;

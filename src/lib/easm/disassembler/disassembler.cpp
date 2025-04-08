@@ -51,18 +51,4 @@ namespace easm {
 
         return decoder.decode_block(data, size, orig_address);
     }
-
-    std::expected<zasm::InstructionDetail, zasm::Error> decode_insn_detail(const std::uint8_t* data, const zasm::MachineMode machine_mode,
-                                                                           const uint64_t orig_address) {
-        Decoder decoder(machine_mode);
-
-        return decoder.decode_insn_detail(data, orig_address);
-    }
-
-    std::expected<zasm::Instruction, zasm::Error> decode_insn(const std::uint8_t* data, const zasm::MachineMode machine_mode,
-                                                              const uint64_t orig_address) {
-        Decoder decoder(machine_mode);
-
-        return decoder.decode_insn(data, orig_address);
-    }
 } // namespace easm

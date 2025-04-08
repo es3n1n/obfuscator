@@ -3,8 +3,8 @@
 
 #include <cstdint>
 #include <optional>
-#include <variant>
 #include <stdexcept>
+#include <variant>
 
 #include <zasm/zasm.hpp>
 
@@ -65,7 +65,7 @@ namespace mathop {
     /// \brief Math operation representation
     class Operation {
     public:
-        DEFAULT_CTOR(Operation);
+        DEFAULT_CT_CTOR(Operation);
         virtual ~Operation() = default;
 
         /// \brief Indicates whether this operation should have a second argument or not

@@ -1,7 +1,7 @@
 #pragma once
 #include "obfuscator/transforms/scheduler.hpp"
 #include "obfuscator/transforms/transforms/util/bcf.hpp"
-#include "util/random.hpp"
+#include <es3n1n/common/random.hpp>
 
 namespace obfuscator::transforms {
     namespace detail::anti_ida_decomp {
@@ -14,7 +14,7 @@ namespace obfuscator::transforms {
     template <pe::any_image_t Img>
     class DecompBreak final : public BBTransform<Img> {
     public:
-        enum Var : std::size_t {
+        enum Var : std::uint8_t {
             BREAK_IDA = 0,
             BREAK_GHIDRA = 1,
         };
@@ -28,15 +28,15 @@ namespace obfuscator::transforms {
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
-        void run_on_bb(TransformContext&, Function<Img>* function, analysis::bb_t* bb) override {
+        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* function, analysis::bb_t* bb) override {
             /// No successors?
             if (bb->successors.empty()) {
                 return;
             }
 
             /// Get the config vars
-            const bool ghidra_opt = this->ghidra->template value<bool>();
-            const bool ida_opt = this->ida->template value<bool>();
+            const bool ghidra_opt = this->ghidra->value<bool>();
+            const bool ida_opt = this->ida->value<bool>();
             assert(ghidra_opt || ida_opt);
 
             /// Generate an opaque predicate and insert ENTER -1 somewhere over there

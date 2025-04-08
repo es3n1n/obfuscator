@@ -8,7 +8,7 @@ namespace mathop::operations {
     ArgumentImm Add::emulate(ArgumentImm op1, std::optional<ArgumentImm> op2) const {
         ArgumentImm result;
         std::visit(
-            [&]<typename Ty>(Ty&& op1_value) -> void { //
+            [&]<typename Ty>(Ty op1_value) -> void { //
                 using Decay = std::decay_t<Ty>;
                 result.emplace<Decay>(op1_value + std::get<Decay>(*op2));
             },

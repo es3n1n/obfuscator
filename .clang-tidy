@@ -1,27 +1,58 @@
+# es3n1n's clang-tidy -- 09 oct 2024 19:56:40 -- https://pastebin.com/Zqj501X6
 Checks: >
     bugprone-*,
-    -bugprone-easily-swappable-parameters,
-    clang-diagnostic-*,
+    cert-*,
     clang-analyzer-*,
+    clang-diagnostic-*,
+    concurrency-*,
     cppcoreguidelines-*,
-    -cppcoreguidelines-pro-type-union-access,
-    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
-    -cppcoreguidelines-non-private-member-variables-in-classes,
-    mpi-*,
-    modernize-*,
-    -modernize-use-trailing-return-type,
-    -modernize-use-nodiscard,
+    google-*,
+    hicpp-*,
     misc-*,
-    -misc-non-private-member-variables-in-classes,
-    -misc-no-recursion,
+    modernize-*,
+    mpi-*,
     performance-*,
+    portability-*,
     readability-*,
-    -readability-function-cognitive-complexity,
+    -bugprone-easily-swappable-parameters,
+    -bugprone-exception-escape,
+    -bugprone-unchecked-optional-access,
+    -bugprone-macro-parentheses,
+    -cert-err58-cpp,
+    -concurrency-mt-unsafe,
+    -clang-analyzer-optin.core.EnumCastOutOfRange,
+    -clang-analyzer-security.insecureAPI.rand,
+    -cppcoreguidelines-avoid-const-or-ref-data-members,
+    -cppcoreguidelines-avoid-c-arrays,
+    -cppcoreguidelines-avoid-do-while,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -cppcoreguidelines-avoid-non-const-global-variables,
+    -cppcoreguidelines-init-variables,
+    -cppcoreguidelines-macro-usage,
+    -cppcoreguidelines-non-private-member-variables-in-classes,
+    -cppcoreguidelines-pro-bounds-constant-array-index,
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-type-reinterpret-cast,
+    -cppcoreguidelines-pro-type-union-access,
+    -cppcoreguidelines-special-member-functions,
+    -hicpp-avoid-c-arrays,
+    -hicpp-special-member-functions,
+    -misc-include-cleaner,
+    -misc-no-recursion,
+    -misc-non-private-member-variables-in-classes,
+    -modernize-avoid-c-arrays,
+    -modernize-use-trailing-return-type,
     -readability-convert-member-functions-to-static,
-WarningsAsErrors: ''
+    -readability-function-cognitive-complexity,
+    -readability-identifier-length,
+    -readability-magic-numbers,
+WarningsAsErrors: '*'
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle: file
 CheckOptions:
-  cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: '1'
-  modernize-use-nullptr.NullMacros: 'NULL'
+    - key: 'modernize-use-nullptr.NullMacros'
+      value: '1'
+    - key: 'misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic'
+      value: '1'
+    - key: 'readability-redundant-access-specifiers.CheckFirstDeclaration'
+      value: '1'

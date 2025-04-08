@@ -7,16 +7,17 @@
 namespace config_parser {
     struct transform_configuration_t {
         std::size_t tag = {};
-        std::unordered_map<std::string, std::string> values = {};
+        std::unordered_map<std::string, std::string> values;
     };
 
     struct function_configuration_t {
-        std::string function_name = {};
-        std::vector<transform_configuration_t> transform_configurations = {};
+        std::string function_name;
+        std::vector<transform_configuration_t> transform_configurations;
     };
 
     struct obfuscator_config_t {
         std::filesystem::path binary_path = "";
+        std::optional<std::uint64_t> seed = std::nullopt;
     };
 
     struct func_parser_config_t {

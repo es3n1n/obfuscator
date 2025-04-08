@@ -1,8 +1,8 @@
 #include "obfuscator/transforms/scheduler.hpp"
 #include "obfuscator/transforms/transforms/bogus_control_flow.hpp"
 #include "obfuscator/transforms/transforms/constant_crypt.hpp"
-#include "obfuscator/transforms/transforms/substitution.hpp"
 #include "obfuscator/transforms/transforms/decomp_break.hpp"
+#include "obfuscator/transforms/transforms/substitution.hpp"
 
 namespace obfuscator {
     /// \fixme @es3n1n: This could and should be moved to the transform scheduler constructor

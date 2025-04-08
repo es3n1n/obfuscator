@@ -22,7 +22,7 @@ namespace obfuscator {
             return __FUNCSIG__;
 #else
             if constexpr (sizeof(__PRETTY_FUNCTION__) == sizeof(__FUNCTION__)) {
-                static_assert(types::always_false_v<>, "Unsupported pretty function");
+                static_assert(traits::always_false_v<>, "Unsupported pretty function");
             }
             return __PRETTY_FUNCTION__;
 #endif
@@ -37,7 +37,7 @@ namespace obfuscator {
         /// \brief Junk info
         constexpr junk_info_t junk_info = []() -> junk_info_t {
             constexpr std::string_view symbol = "DummyTransform";
-            std::string_view sample = get_funcsig<transforms::DummyTransform>();
+            constexpr auto sample = get_funcsig<transforms::DummyTransform>();
             return junk_info_t{.start = sample.find(symbol), //
                                .total = sample.size() - symbol.size()};
         }();

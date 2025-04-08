@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <es3n1n/common/logger.hpp>
 #include <functional>
 #include <iterator>
 #include <vector>
@@ -53,8 +54,8 @@ namespace analysis {
     // Instruction flags repr
     //
     enum e_insn_fl : std::uint8_t {
-        UNABLE_TO_ESTIMATE_JCC = (1 << 0),
-        TO_BE_REMOVED = (1 << 1)
+        UNABLE_TO_ESTIMATE_JCC = (1U << 0U),
+        TO_BE_REMOVED = (1U << 1U)
     };
 
     // CPU Flags
@@ -132,7 +133,7 @@ namespace analysis {
         // in the ways that are stored in this vector.
         // If not set the execution is just linear.
         //
-        std::vector<cf_direction_t> cf = {};
+        std::vector<cf_direction_t> cf;
 
         // Reloc info
         //
@@ -295,11 +296,9 @@ namespace analysis {
             predecessors.emplace_back(value);
         }
 
-        std::shared_ptr<label_t> push_label(zasm::Node* label_node_ptr, const bb_provider_t* bb_provider) {
-            assert(bb_provider != nullptr);
-
+        std::shared_ptr<label_t> push_label(zasm::Node* label_node_ptr, const bb_provider_t* /*bb_provider*/) {
             // Acquire label ref
-            const auto ref = label_node_ptr->getIf<zasm::Label>();
+            auto* const ref = label_node_ptr->getIf<zasm::Label>();
             if (ref == nullptr) {
                 return nullptr;
             }
@@ -325,7 +324,7 @@ namespace analysis {
             assert(bb_provider != nullptr);
 
             /// We are storing only instructions
-            const auto ref = insn_node_ptr->getIf<zasm::Instruction>();
+            auto* const ref = insn_node_ptr->getIf<zasm::Instruction>();
             if (ref == nullptr) {
                 if (insn_node_ptr->holds<zasm::Label>()) { // \todo @es3n1n: issue some sort of warning?
                     push_label(insn_node_ptr, bb_provider);
@@ -430,17 +429,17 @@ namespace analysis {
 
                 /// Push ref if condition met
                 ///
-                const auto not_met_type = is_conditional ? cf_direction_t::e_type::JCC_CONDITION_MET : cf_direction_t::e_type::JMP;
+                const auto met_type = is_conditional ? cf_direction_t::e_type::JCC_CONDITION_MET : cf_direction_t::e_type::JMP;
 
                 if (jcc_branch.has_value()) {
-                    push_cf_changer(not_met_type, bb_provider->find_by_start_va(jcc_branch.value(), this));
+                    push_cf_changer(met_type, bb_provider->find_by_start_va(jcc_branch.value(), this));
                     return;
                 }
 
                 if (jcc_branch_label.has_value()) {
                     auto bb_ref = bb_provider->find_by_label(jcc_branch_label.value(), this);
                     assert(bb_ref.has_value()); // we shouldn't reschedule this one
-                    push_cf_changer(not_met_type, bb_ref.value());
+                    push_cf_changer(met_type, bb_ref);
                 }
             };
             update_cf();
@@ -455,12 +454,12 @@ namespace analysis {
         void push_last_N_insns(const zasm::x86::Assembler* assembler, const bb_provider_t* bb_provider, const std::size_t count) {
             /// Get the last inserted instruction
             ///
-            auto node = assembler->getCursor();
+            auto* node = assembler->getCursor();
 
             /// Insert in reverse order
             ///
-            std::size_t i;
-            for (i = 0; i < count && node != nullptr; i++, node = node->getPrev()) {
+            std::size_t i = 0;
+            for (; i < count && node != nullptr; i++, node = node->getPrev()) {
                 (void)push_insn(node, bb_provider);
             }
 
@@ -659,11 +658,11 @@ namespace analysis {
         std::optional<insn_ptr_t> jmp_at = std::nullopt; // jmp reg
 
         std::optional<memory::address> jump_table_rva = std::nullopt;
-        std::vector<rva_t> entries = {};
+        std::vector<rva_t> entries;
     };
 
     struct bb_storage_t {
-        DEFAULT_CTOR_DTOR(bb_storage_t);
+        DEFAULT_CT_CTOR_DTOR(bb_storage_t);
         DEFAULT_COPY(bb_storage_t);
         explicit bb_storage_t(const std::vector<std::shared_ptr<bb_t>>& value): basic_blocks(value) { }
 
@@ -745,6 +744,6 @@ namespace analysis {
             return basic_blocks;
         }
 
-        std::vector<std::shared_ptr<bb_t>> basic_blocks = {};
+        std::vector<std::shared_ptr<bb_t>> basic_blocks;
     };
 } // namespace analysis

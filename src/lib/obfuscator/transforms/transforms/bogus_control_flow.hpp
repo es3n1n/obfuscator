@@ -8,11 +8,11 @@ namespace obfuscator::transforms {
     template <pe::any_image_t Img>
     class BogusControlFlow final : public FunctionTransform<Img> {
     public:
-        enum Var {
+        enum Var : std::uint8_t {
             MODE = 0,
             EXPR_SIZE = 1,
         };
-        enum Mode {
+        enum Mode : std::uint8_t {
             OPAQUE_PREDICATES = 0,
             RANDOM_PREDICATES = 1,
         };
@@ -92,22 +92,22 @@ namespace obfuscator::transforms {
                 /// Iterate over the operands
                 for (std::size_t i = 0; i < insn->ref->getOperandCount(); ++i) {
                     /// Tamper mem
-                    if (auto* op_mem = insn->ref->template getOperandIf<zasm::Mem>(i)) {
+                    if (auto* op_mem = insn->ref->getOperandIf<zasm::Mem>(i)) {
                         if (auto base = op_mem->getBase(); base.isValid()) {
                             op_mem->setBase(function->lru_reg.get_for_bits(base.getBitSize(function->machine_mode), true));
                         }
-                        if (op_mem->getDisplacement()) {
+                        if (op_mem->getDisplacement() != 0ULL) {
                             op_mem->setDisplacement(rnd::number<std::int8_t>());
                         }
                     }
 
                     /// Tamper reg
-                    if (const auto* op_reg = insn->ref->template getOperandIf<zasm::Reg>(i)) {
+                    if (const auto* op_reg = insn->ref->getOperandIf<zasm::Reg>(i)) {
                         insn->ref->setOperand(i, function->lru_reg.get_for_bits(op_reg->getBitSize(function->machine_mode), true));
                     }
 
                     /// Tamper imm
-                    if (auto* op_imm = insn->ref->template getOperandIf<zasm::Imm>(i)) {
+                    if (auto* op_imm = insn->ref->getOperandIf<zasm::Imm>(i)) {
                         op_imm->setValue(rnd::number<std::int8_t>(0, 4));
                     }
                 }

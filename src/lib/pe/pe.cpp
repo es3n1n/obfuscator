@@ -6,7 +6,7 @@
 #include "pe/rebuilder/rebuilder.hpp"
 
 #include "util/format.hpp"
-#include "util/logger.hpp"
+#include <es3n1n/common/logger.hpp>
 #include <magic_enum_all.hpp>
 
 namespace pe {
@@ -105,7 +105,7 @@ namespace pe {
 
         return new_sec;
     }
-    
+
     template <any_raw_image_t Img>
     void Image<Img>::realign_sections() const {
         /// Nothing to realign
@@ -150,7 +150,7 @@ namespace pe {
             // Getting a section and validating it
             //
             const auto* section = nt_hdr->get_section(i);
-            if (!section) {
+            if (section == nullptr) {
                 continue;
             }
 
@@ -221,6 +221,12 @@ namespace pe {
             // Iterating over reloc entries
             //
             for (const auto& [offset, type] : *reloc_block) {
+                // Skip ignored relocations
+                //
+                if (type == win::reloc_type_id::rel_based_absolute) {
+                    continue;
+                }
+
                 // Inserting parsed reloc data
                 //
                 auto rva = static_cast<memory::address>(reloc_block->base_rva) + memory::address(offset);

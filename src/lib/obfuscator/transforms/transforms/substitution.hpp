@@ -1,6 +1,6 @@
 #pragma once
 #include "obfuscator/transforms/scheduler.hpp"
-#include "util/random.hpp"
+#include <es3n1n/common/random.hpp>
 
 namespace obfuscator::transforms {
     template <pe::any_image_t Img>
@@ -12,8 +12,8 @@ namespace obfuscator::transforms {
         /// Temporary operand holder for substitutions
         struct tmp_op_holder_t {
             /// Constructor that captures the desired operands
-            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc<Img>& var_alloc, const analysis::insn_t* insn, const zasm::Operand& operand,
-                            const std::optional<zasm::Operand>& other_operand = std::nullopt)
+            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc<Img>& var_alloc, const analysis::insn_t* insn,
+                            const zasm::Operand& operand, const std::optional<zasm::Operand>& other_operand = std::nullopt)
                 : var_alloc(var_alloc), operand(operand), assembler(assembler) {
                 /// No need to alloc anything
                 if (operand.holds<zasm::Reg>()) {
@@ -119,7 +119,7 @@ namespace obfuscator::transforms {
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
-        void run_on_bb(TransformContext&, Function<Img>* function, analysis::bb_t* bb) override {
+        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* function, analysis::bb_t* bb) override {
             /// Iterating over the instructions
             for (auto& insn : bb->temp_insns_copy()) {
                 if (easm::affects_sp(function->machine_mode, *insn->ref)) {

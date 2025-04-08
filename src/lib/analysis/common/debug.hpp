@@ -1,8 +1,7 @@
 #pragma once
 #include "analysis/common/common.hpp"
-#include "util/files.hpp"
+#include <es3n1n/common/files.hpp>
 
-#include <filesystem>
 #include <sstream>
 
 #include <magic_enum.hpp>
@@ -23,25 +22,24 @@ namespace analysis::debug {
         ss << "start:" << std::hex << basic_block.start_rva.value_or(0).inner() << '\n';
         ss << "end:" << std::hex << basic_block.start_rva.value_or(0).inner() << '\n';
 
-        for (auto& instruction : basic_block.instructions) {
+        for (const auto& instruction : basic_block.instructions) {
             ss << "instruction:" << std::hex << instruction->rva.value_or(0).inner() << ";"
                << ZydisMnemonicGetString(static_cast<ZydisMnemonic>(instruction->ref->getMnemonic().value())) << '\n';
         }
 
-        for (auto& successor : basic_block.successors) {
+        for (const auto& successor : basic_block.successors) {
             ss << "successor:" << std::hex << successor->start_rva.value_or(0).inner() << '\n';
         }
 
-        for (auto& predecessor : basic_block.predecessors) {
+        for (const auto& predecessor : basic_block.predecessors) {
             ss << "predecessor:" << std::hex << predecessor->start_rva.value_or(0).inner() << '\n';
         }
 
         const auto data = ss.str();
-        util::write_file(file, reinterpret_cast<const uint8_t*>(data.data()), data.size());
+        files::write_file(file, reinterpret_cast<const uint8_t*>(data.data()), data.size());
     }
 
     [[maybe_unused]] inline void dump_bb(const bb_t& bb) {
-        using namespace detail;
         logger::info("BB: {:#x} :: {:#x}", bb.start_rva.value_or(0), bb.end_rva.value_or(0));
         logger::info<1>("Valid: {}", bb.flags.valid);
         logger::info<1>("Instructions:");
@@ -56,9 +54,9 @@ namespace analysis::debug {
                 for (std::size_t i = 0; i < ops_count; ++i) {
                     const auto operand = instruction->ref->getOperand(i);
 
-                    const auto operand_name_pair = operand_type_lookup.find(operand.getTypeIndex());
+                    const auto operand_name_pair = detail::operand_type_lookup.find(operand.getTypeIndex());
                     const auto operand_name = //
-                        operand_name_pair == std::end(operand_type_lookup) ? unknown_type_name : operand_name_pair->second;
+                        operand_name_pair == std::end(detail::operand_type_lookup) ? detail::unknown_type_name : operand_name_pair->second;
 
                     logger::info<4>("{}", operand_name);
                 }

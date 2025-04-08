@@ -23,8 +23,8 @@ namespace analysis::bb_decomp {
 
         Instance(const Instance& instance)
             : image_(instance.image_), function_start_(instance.function_start_), function_size_(instance.function_size_),
-              basic_blocks_(instance.basic_blocks_), program_(std::move(instance.program_)), assembler_(std::move(instance.assembler_)),
-              decoder_(instance.decoder_), jump_tables_(instance.jump_tables_), bb_provider_(instance.bb_provider_) { }
+              basic_blocks_(instance.basic_blocks_), program_(instance.program_), assembler_(instance.assembler_), decoder_(instance.decoder_),
+              jump_tables_(instance.jump_tables_), bb_provider_(instance.bb_provider_) { }
 
         void collect();
         void split();
@@ -142,16 +142,16 @@ namespace analysis::bb_decomp {
         rva_t function_start_ = nullptr;
         std::optional<std::size_t> function_size_ = std::nullopt;
 
-        std::unordered_map<rva_t, std::shared_ptr<bb_t>> basic_blocks_ = {};
-        std::vector<std::shared_ptr<bb_t>> virtual_basic_blocks_ = {}; // = without the rva
+        std::unordered_map<rva_t, std::shared_ptr<bb_t>> basic_blocks_;
+        std::vector<std::shared_ptr<bb_t>> virtual_basic_blocks_; // = without the rva
 
-        std::shared_ptr<zasm::Program> program_ = {};
-        std::shared_ptr<zasm::x86::Assembler> assembler_ = {};
+        std::shared_ptr<zasm::Program> program_;
+        std::shared_ptr<zasm::x86::Assembler> assembler_;
         easm::Decoder decoder_;
 
-        std::unordered_map<rva_t, jump_table_t> jump_tables_ = {};
+        std::unordered_map<rva_t, jump_table_t> jump_tables_;
 
-        std::shared_ptr<functional_bb_provider_t> bb_provider_ = {};
+        std::shared_ptr<functional_bb_provider_t> bb_provider_;
     };
 
     template <pe::any_image_t Img>

@@ -17,7 +17,10 @@ namespace obfuscator {
         void add_function(const config_parser::function_configuration_t& configuration);
         void obfuscate();
         void assemble();
-        void save();
+        std::filesystem::path save();
+
+        // setup() -> obfuscate() -> assemble() -> save()
+        std::filesystem::path run();
 
         struct function_t {
             analysis::Function<Img> analysed;
@@ -26,8 +29,8 @@ namespace obfuscator {
 
     private:
         Img* image_ = nullptr;
-        config_parser::Config config_ = {};
-        func_parser::Instance<Img> func_parser_ = {};
-        std::vector<function_t> functions_ = {};
+        config_parser::Config config_;
+        func_parser::Instance<Img> func_parser_;
+        std::vector<function_t> functions_;
     };
 } // namespace obfuscator

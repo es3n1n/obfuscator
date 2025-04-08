@@ -12,6 +12,7 @@ namespace obfuscator::transform_util {
     /// \param predicate_generator Predicate generator
     template <pe::any_image_t Img>
     void generate_bogus_confrol_flow(Function<Img>* function, analysis::bb_t* bb, const std::function<void(analysis::bb_t*)>& post_generation_callback,
+                                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
                                      std::function<void(zasm::x86::Assembler*, zasm::Label, zasm::Label, analysis::VarAlloc<Img>*)> predicate_generator) {
 
         /// Get the last non-jmp insn

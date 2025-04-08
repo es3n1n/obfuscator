@@ -1,6 +1,5 @@
 #pragma once
 #include "analysis/common/debug.hpp"
-#include "util/memory/address.hpp"
 
 namespace easm {
     inline void dump_program(const zasm::Program& program) {
@@ -29,6 +28,7 @@ namespace easm {
                     for (std::size_t i = 0; i < ops_count; ++i) {
                         const auto operand = node_insn->getOperand(i);
 
+                        // NOLINTNEXTLINE(google-build-using-namespace)
                         using namespace analysis::debug::detail;
                         const auto operand_name_pair = operand_type_lookup.find(operand.getTypeIndex());
                         const auto operand_name = //
@@ -42,11 +42,13 @@ namespace easm {
 
                         if (const auto* p_mem = node_insn->getOperandIf<zasm::Mem>(i); p_mem) {
                             const auto reg = static_cast<ZydisRegister_>(p_mem->getBase().getId());
-                            logger::info<3>("expr: [{} + {:#x}]",
-                                            reg == 0                ? "none" :
-                                            p_mem->getBase().isIP() ? "ip" :
-                                                                      std::to_string(reg),
-                                            p_mem->getDisplacement());
+
+                            std::string reg_str = reg == 0 ? "none" : std::to_string(reg);
+                            if (p_mem->getBase().isIP()) {
+                                reg_str = "ip";
+                            }
+
+                            logger::info<3>("expr: [{} + {:#x}]", reg_str, p_mem->getDisplacement());
                         }
                     }
                 }

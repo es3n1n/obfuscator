@@ -5,7 +5,7 @@
 namespace analysis::passes {
     template <pe::any_image_t Img>
     struct collect_img_references_t {
-        DEFAULT_CTOR_DTOR(collect_img_references_t);
+        DEFAULT_CT_CTOR_DTOR(collect_img_references_t);
         NON_COPYABLE(collect_img_references_t);
 
         static bool apply_insn(Function<Img>* function, insn_t& instruction, Img* image) {

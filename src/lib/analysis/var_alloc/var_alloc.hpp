@@ -38,7 +38,7 @@ namespace analysis {
     template <pe::any_image_t Img>
     class VarAlloc {
     public:
-        DEFAULT_CTOR_DTOR(VarAlloc);
+        DEFAULT_CT_CTOR_DTOR(VarAlloc);
         DEFAULT_COPY(VarAlloc);
         explicit VarAlloc(LRUReg<Img>* lru_reg): lru_reg_(lru_reg) { }
 
@@ -164,7 +164,7 @@ namespace analysis {
         }
 
         /// \brief A list of gp64 registers that we are already using
-        std::list<RegID> registers_in_use_ = {};
+        std::list<RegID> registers_in_use_;
         /// \brief How many bytes would we need for storing all allocated vars
         std::size_t stack_space_used_ = 0;
         /// \brief LRU registers storage

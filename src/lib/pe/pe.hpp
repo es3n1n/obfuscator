@@ -1,9 +1,8 @@
 #pragma once
 
-#include "util/memory/address.hpp"
 #include "util/sections.hpp"
 #include "util/structs.hpp"
-#include "util/types.hpp"
+#include <es3n1n/common/memory/address.hpp>
 
 #include "pe/common/types.hpp"
 
@@ -13,18 +12,16 @@
 #include <vector>
 #include <zasm/base/mode.hpp>
 
-// NOLINTBEGIN(bugprone-macro-parentheses)
 #define PE_DECL_TEMPLATE_CLASSES(class_name)                \
     template class class_name<pe::Image<win::image_x64_t>>; \
     template class class_name<pe::Image<win::image_x86_t>>
 #define PE_DECL_TEMPLATE_STRUCTS(struct_name)                 \
     template struct struct_name<pe::Image<win::image_x64_t>>; \
     template struct struct_name<pe::Image<win::image_x86_t>>
-// NOLINTEND(bugprone-macro-parentheses)
 
 namespace pe {
     /// Concept for raw images from linux-pe, could also probably check for `win::image_t`
-    template <typename Ty> concept any_raw_image_t = types::is_any_of_v<Ty, win::image_x86_t, win::image_x64_t>;
+    template <typename Ty> concept any_raw_image_t = traits::is_any_of_v<Ty, win::image_x86_t, win::image_x64_t>;
 
     /// Wrapper around pe header data, could be improved and hopefully everything could be merged from the
     ///
@@ -35,7 +32,7 @@ namespace pe {
             update_sections();
             update_relocations();
         }
-        DEFAULT_CTOR_DTOR(Image);
+        DEFAULT_CT_CTOR_DTOR(Image);
         DEFAULT_COPY(Image);
 
         [[nodiscard]] bool is_x64() const;
@@ -94,14 +91,20 @@ namespace pe {
         Img* raw_image = nullptr;
 
         /// An unordered map that consists of {rva: reloc_info}
-        std::unordered_map<memory::address, relocation_t> relocations = {};
+        std::unordered_map<memory::address, relocation_t> relocations;
 
         /// A sections list
-        mutable std::vector<section_t> sections = {};
+        mutable std::vector<section_t> sections;
     };
 
     /// A concept for our Image, so that we can just use it within the templates
-    template <typename Ty> concept any_image_t = types::is_any_of_v<Ty, Image<win::image_x86_t>, Image<win::image_x64_t>>;
+    template <typename Ty> concept any_image_t = traits::is_any_of_v<Ty, Image<win::image_x86_t>, Image<win::image_x64_t>>;
+
+    template <template <typename> typename Ty>
+    concept pe_generic_class_t = requires {
+        typename Ty<Image<win::image_x64_t>>;
+        typename Ty<Image<win::image_x86_t>>;
+    };
 
     /// Converter from `Image` to `win::image_x**_t`
     template <typename Ty>

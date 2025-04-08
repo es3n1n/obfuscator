@@ -100,10 +100,10 @@ def generate_all(num: int = 3) -> None:
 
         x1, x2 = BitVecs('x1 x2', sz)
         s.add(x1 != x2)
-        s.add(cur >= 0, cur <= 40960)
+        # s.add(cur >= 0, cur <= 40960)
 
         expr1 = substitute(cur, (startv, x1,))
-        expr2 = substitute(cur, (startv, x1,))
+        expr2 = substitute(cur, (startv, x2,))
 
         if s.check(expr1 != expr2) != unsat:
             continue

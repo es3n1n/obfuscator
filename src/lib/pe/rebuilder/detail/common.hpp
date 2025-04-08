@@ -29,7 +29,7 @@ namespace pe::detail {
                               std::function<RetTy(Image<win::image_x86_t>*, std::vector<std::uint8_t>&)> x86_visitor, //
                               std::vector<std::uint8_t>& data) {
         return std::visit<RetTy>(
-            [&]<typename Ty>(Ty&& inst) -> RetTy {
+            [&]<typename Ty>(Ty& inst) -> RetTy {
                 if constexpr (std::is_same_v<std::decay_t<decltype(inst)>, X64PtrWrapper>) {
                     return x64_visitor(inst.ptr, data);
                 } else {
@@ -41,6 +41,6 @@ namespace pe::detail {
 
     template <typename Ty>
     [[nodiscard]] Ty* buffer_pointer(std::vector<std::uint8_t>& data) {
-        return memory::cast<Ty*>(data.data());
+        return reinterpret_cast<Ty*>(data.data());
     }
 } // namespace pe::detail

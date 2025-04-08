@@ -2,6 +2,7 @@
 #include "analysis/bb_decomp/bb_decomp.hpp"
 #include "analysis/common/common.hpp"
 #include "analysis/lru_reg/lru_reg.hpp"
+#include "easm/misc/misc.hpp"
 #include "func_parser/parser.hpp"
 #include "observer/observer.hpp"
 #include "util/types.hpp"
@@ -116,17 +117,20 @@ namespace analysis {
         // A lookup table with key set to insn rva and value is the ptr to insn info,
         // \fixme: @es3n1n: ptr could be invalid at some point
         //
-        std::unordered_map<rva_t, insn_t*> instructions_lookup = {};
+        std::unordered_map<rva_t, insn_t*> instructions_lookup;
 
         // BB Provider
         //
-        std::shared_ptr<functional_bb_provider_t> bb_provider = {};
+        std::shared_ptr<functional_bb_provider_t> bb_provider;
     };
 
     template <pe::any_image_t Img>
     Function<Img> analyse(Img* image, const func_parser::function_t& function) {
         auto result = Function<Img>(image, function);
         logger::debug("analysis: analysed function {}", function);
+        if (auto size = result.range.size(); size < easm::kMaxEntryInstructionSize) {
+            throw std::runtime_error(std::format("analysis: Minimal function size is {} bytes, got {}", easm::kMaxEntryInstructionSize, size));
+        }
         return result;
     }
 } // namespace analysis

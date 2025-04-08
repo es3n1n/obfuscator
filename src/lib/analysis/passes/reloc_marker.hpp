@@ -5,7 +5,7 @@
 namespace analysis::passes {
     template <pe::any_image_t Img>
     struct reloc_marker_t {
-        DEFAULT_CTOR_DTOR(reloc_marker_t);
+        DEFAULT_CT_CTOR_DTOR(reloc_marker_t);
         NON_COPYABLE(reloc_marker_t);
 
         static bool apply_insn(Function<Img>* function [[maybe_unused]], insn_t& instruction, Img* image) {
@@ -44,7 +44,7 @@ namespace analysis::passes {
             // At this point, we are 100% sure that imm is set to something, so we can ignore the `imm != 0` check.
             // If there's an imm with the size of uintptr_t, we should check maybe it's present in the .reloc dir
             //
-            if (imm != nullptr && getBitSize(imm->getBitSize()) == (ptr_size * 8) && instruction.length >= ptr_size) {
+            if (imm != nullptr && getBitSize(imm->getBitSize()) == (ptr_size * CHAR_BIT) && instruction.length >= ptr_size) {
                 // Trying to find relocation from PE header within the instruction
                 // \todo @es3n1n: check segments instead of just bruteforcing
                 //

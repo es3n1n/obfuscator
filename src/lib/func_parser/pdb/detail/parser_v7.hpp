@@ -6,8 +6,9 @@
 #include <vector>
 
 #include "func_parser/pdb/detail/structs.hpp"
-#include "util/memory/address.hpp"
-#include "util/types.hpp"
+#include <es3n1n/common/memory/address.hpp>
+#include <es3n1n/common/types.hpp>
+#include <util/structs.hpp>
 
 // \todo: @es3n1n: we should probably use OMAP from the pdb for rva conversion
 
@@ -24,7 +25,7 @@ namespace func_parser::pdb::detail {
         void iter_symbols(const std::function<bool(std::uint16_t, memory::address)>& callback) const;
 
         template <typename Ty = DBIRecordHeader>
-        void iter_symbols(const std::uint16_t kind, std::function<void(Ty*)> callback) const {
+        void iter_symbols(const std::uint16_t kind, const std::function<void(Ty*)>& callback) const {
             iter_symbols([=](const std::uint16_t it_kind, const memory::address raw) -> bool {
                 if (it_kind != kind) {
                     return true;
@@ -36,7 +37,7 @@ namespace func_parser::pdb::detail {
         }
 
         template <typename Ty = DBIRecordHeader, typename... Args>
-        void iter_symbols(std::function<void(Ty*)> callback, Args... args) const {
+        void iter_symbols(const std::function<void(Ty*)>& callback, Args... args) const {
             for (auto kind : types::to_array(std::forward<Args>(args)...)) {
                 iter_symbols(kind, callback);
             }
@@ -63,12 +64,12 @@ namespace func_parser::pdb::detail {
         SuperBlock* header_ = nullptr;
 
         // contains virtual addresses, cba storing anything else
-        std::vector<std::uint64_t> sections_ = {};
+        std::vector<std::uint64_t> sections_;
 
         // these streams should be in the right order
-        std::vector<std::vector<std::uint8_t>> streams_ = {};
+        std::vector<std::vector<std::uint8_t>> streams_;
 
         // key is sym kind, values are ptrs to the symbols
-        std::unordered_map<std::uint16_t, std::vector<memory::address>> dbi_symbols_ = {};
+        std::unordered_map<std::uint16_t, std::vector<memory::address>> dbi_symbols_;
     };
 } // namespace func_parser::pdb::detail
