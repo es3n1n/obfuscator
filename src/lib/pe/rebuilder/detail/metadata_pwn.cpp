@@ -15,7 +15,7 @@ namespace pe::detail {
             std::memset(data.data() + rich_offset, 0, rich_size);
 
             /// Wipe linker version
-            std::memset(&optional_header->linker_version, 0, 6);
+            std::memset(&optional_header->linker_version, 0, sizeof(optional_header->linker_version));
 
             /// Alter number of symbols and timestamp
             file_header->num_symbols = std::numeric_limits<int>::max();
