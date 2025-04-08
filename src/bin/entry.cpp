@@ -20,7 +20,6 @@ namespace {
 
     int startup(config_parser::Config& config) try {
         rnd::detail::seed(config.obfuscator_config().seed);
-        
         const auto& binary_path = config.obfuscator_config().binary_path;
 
         logger::info("main: loading binary from {}", binary_path.string());
