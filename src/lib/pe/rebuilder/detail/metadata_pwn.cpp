@@ -26,7 +26,7 @@ namespace pe::detail {
             std::memset(&optional_header->data_directories.debug_directory, 0, optional_header->data_directories.debug_directory.size);
 
             /// Wipe checksum
-            std::memset(&optional_header->checksum, 0, 4);
+            std::memset(&optional_header->checksum, 0, sizeof(optional_header->checksum));
 
             /// Wipe section names
             auto* sections = nt_headers->get_sections();
