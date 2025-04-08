@@ -3,7 +3,7 @@
 namespace pe::detail {
     namespace {
         template <any_image_t Img>
-        void metadata_pwn_(Img* image, std::vector<std::uint8_t>& data) {
+        void erase_metadata_(Img* image, std::vector<std::uint8_t>& data) {
             auto* out_img = detail::buffer_pointer<to_raw_img_t<Img>>(data);
             auto* nt_headers = out_img->get_nt_headers();
             auto* file_header = &nt_headers->file_header;
@@ -36,7 +36,7 @@ namespace pe::detail {
         }
     } // namespace
 
-    void metadata_pwn(const ImgWrapped image, std::vector<std::uint8_t>& data) {
-        UNWRAP_IMAGE(void, metadata_pwn_);
+    void erase_metadata(const ImgWrapped image, std::vector<std::uint8_t>& data) {
+        UNWRAP_IMAGE(void, erase_metadata_);
     }
 } // namespace pe::detail

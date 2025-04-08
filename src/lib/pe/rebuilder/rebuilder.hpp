@@ -8,7 +8,7 @@ namespace pe {
         void init_header(ImgWrapped image, std::vector<std::uint8_t>& data);
         void copy_sections(ImgWrapped image, std::vector<std::uint8_t>& data);
         void update_checksum(ImgWrapped image, std::vector<std::uint8_t>& data);
-        void metadata_pwn(ImgWrapped image, std::vector<std::uint8_t>& data);
+        void erase_metadata(ImgWrapped image, std::vector<std::uint8_t>& data);
     } // namespace detail
 
     template <any_image_t Img>
@@ -49,7 +49,7 @@ namespace pe {
 
         /// Wipe metadata
         //
-        detail::metadata_pwn(ctx.wrap(), result);
+        detail::erase_metadata(ctx.wrap(), result);
         progress.step();
 
         // We are done here
