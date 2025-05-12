@@ -49,6 +49,8 @@ namespace {
 } // namespace
 
 int main(const int argc, const char* argv[]) try {
+    logger::info("main: starting obfuscator");
+
     obfuscator::startup_scheduler();
 
     auto config = config_parser::from_argv(argc, argv);

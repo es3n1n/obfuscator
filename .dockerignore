@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Build directories
+build/
+*/build/
+*/*/build/
+
+# CI/CD
+.github/
+
+# Generated files
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.obj
+*.lib
+*.pdb
+
+# Docs
+LICENSE
+*.md
+
+# Docker
+Dockerfile
+.dockerignore 

@@ -233,9 +233,9 @@ namespace pe {
 
                 // Just to be sure
                 //
-                if (relocations.contains(rva)) [[unlikely]] {
-                    throw std::runtime_error(std::format("pe: duplicated {:#x} rva entry", rva));
-                }
+                //if (relocations.contains(rva)) [[unlikely]] {
+                //    throw std::runtime_error(std::format("pe: duplicated {:#x} rva entry", rva));
+                //}
 
                 // Inserting relocation info
                 //
