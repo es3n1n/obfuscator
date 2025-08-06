@@ -9,13 +9,13 @@ namespace analysis::passes {
         DEFAULT_CT_CTOR_DTOR(label_references_t);
         NON_COPYABLE(label_references_t);
 
-        static bool apply(Function<Img>* function, Img* /*image*/) {
+        static bool apply(PassContext<Img>& ctx) {
             // Iterating over referenced RVAs within the function
             //
-            for (const auto& [referenced_insn_rva, insn_ptrs] : function->image_references) {
+            for (const auto& [referenced_insn_rva, insn_ptrs] : ctx.function->image_references) {
                 // Skip if reference is not within the function
                 //
-                if (!(referenced_insn_rva >= function->range.start && referenced_insn_rva <= function->range.end)) {
+                if (!(referenced_insn_rva >= ctx.function->range.start && referenced_insn_rva <= ctx.function->range.end)) {
                     continue;
                 }
 
@@ -31,20 +31,20 @@ namespace analysis::passes {
 
                 // Creating label for the referenced loc
                 //
-                const auto referenced_loc_label = function->program.get()->createLabel(referenced_loc_name.c_str());
-                const auto referenced_loc_label_node = function->program.get()->bindLabel(referenced_loc_label);
+                const auto referenced_loc_label = ctx.function->program.get()->createLabel(referenced_loc_name.c_str());
+                const auto referenced_loc_label_node = ctx.function->program.get()->bindLabel(referenced_loc_label);
                 if (!referenced_loc_label_node) [[unlikely]] {
                     throw std::runtime_error("analysis: Unable to bind the label");
                 }
 
                 // Moving label node to the referenced instruction
                 //
-                const auto referenced_insn = function->instructions_lookup.find(referenced_insn_rva);
-                if (referenced_insn == function->instructions_lookup.end()) [[unlikely]] {
+                const auto referenced_insn = ctx.function->instructions_lookup.find(referenced_insn_rva);
+                if (referenced_insn == ctx.function->instructions_lookup.end()) [[unlikely]] {
                     throw std::runtime_error("analysis: Unable to find referenced insn");
                 }
-                function->program.get()->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
-                referenced_insn->second->bb_ref->push_label(*referenced_loc_label_node, function->bb_provider.get());
+                ctx.function->program.get()->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
+                referenced_insn->second->bb_ref->push_label(*referenced_loc_label_node, ctx.function->bb_provider.get());
 
                 // Iterating over instructions that referenced this RVA
                 //

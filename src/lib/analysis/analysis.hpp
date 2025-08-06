@@ -15,66 +15,12 @@ namespace analysis {
     public:
         Function(Img* image, const func_parser::function_t& func): parsed_func(func) {
             bb_decomp::Instance<Img> bb_decomp_inst(image, func.rva, func.size);
-            bb_storage = bb_decomp_inst.export_blocks();
-            program = bb_decomp_inst.export_program();
+            setup(bb_decomp_inst, image);
+        }
 
-            calc_range();
-
-            /// Init the bb provider
-            bb_provider = std::make_shared<functional_bb_provider_t>();
-
-            /// Set RVA finder
-            bb_provider->set_rva_finder([storage = bb_storage.get()](const rva_t rva, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Find by RVA
-                auto it = std::ranges::find_if(storage->basic_blocks, [rva](auto&& bb) -> bool {
-                    return bb->start_rva.has_value() && bb->start_rva.value() == rva; //
-                });
-
-                /// Return wrapped in optional
-                return it == std::end(storage->basic_blocks) ? std::nullopt : std::make_optional(*it);
-            });
-
-            /// Set VA finder
-            bb_provider->set_va_finder([img_base = image->raw_image->get_nt_headers()->optional_header.image_base,
-                                        provider = bb_provider.get()](const rva_t va, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Substract base and find by RVA
-                return provider->find_by_start_rva(va - img_base, callee); //
-            });
-
-            /// Set Label finder
-            bb_provider->set_label_finder([storage = bb_storage.get()](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
-                for (auto& bb : storage->basic_blocks) {
-                    /// Continue if bb doesn't contain this label
-                    if (!bb->contains_label(label->getId())) {
-                        continue;
-                    }
-
-                    return bb;
-                }
-
-                return std::nullopt;
-            });
-
-            /// Set reference acquire callback
-            bb_provider->set_ref_acquire([storage = bb_storage.get()](const bb_t* bb) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Try to find by ptr
-                auto it = std::ranges::find_if(storage->basic_blocks, [bb](const auto& p) -> bool {
-                    return p.get() == bb; //
-                });
-
-                /// Not found
-                if (it == std::end(storage->basic_blocks)) {
-                    return std::nullopt;
-                }
-
-                /// Found
-                return std::make_optional(*it);
-            });
-
-            assembler = std::make_shared<zasm::x86::Assembler>(*program);
-            observer = std::make_shared<Observer>(program, bb_storage, bb_provider);
-
-            apply_passes(image);
+        explicit Function(std::span<std::uint8_t> raw_data): parsed_func(std::nullopt) {
+            bb_decomp::Instance<Img> bb_decomp_inst(raw_data);
+            setup(bb_decomp_inst);
         }
 
         ~Function() = default;
@@ -83,8 +29,9 @@ namespace analysis {
               parsed_func(instance.parsed_func), range(instance.range), lru_reg(instance.lru_reg), bb_provider(instance.bb_provider) { }
 
     private:
-        void apply_passes(Img* image);
+        void apply_passes(std::optional<Img*> image = std::nullopt);
         void calc_range();
+        void setup(bb_decomp::Instance<Img>& decomp, std::optional<Img*> image = std::nullopt);
 
     public:
         // A zasm program instance that contains all of our instructions
@@ -99,7 +46,7 @@ namespace analysis {
 
         // Info about the function from the .map/.pdb files
         //
-        func_parser::function_t parsed_func;
+        std::optional<func_parser::function_t> parsed_func;
 
         // A start/end range of function
         //
@@ -132,5 +79,10 @@ namespace analysis {
             throw std::runtime_error(std::format("analysis: Minimal function size is {} bytes, got {}", easm::kMaxEntryInstructionSize, size));
         }
         return result;
+    }
+
+    template <pe::any_image_t Img>
+    Function<Img> analyse(std::span<std::uint8_t> function_data) {
+        return Function<Img>(function_data);
     }
 } // namespace analysis

@@ -56,6 +56,7 @@ set(obfuscator-lib_SOURCES
 	"lib/analysis/bb_decomp/bb_decomp.hpp"
 	"lib/analysis/common/common.hpp"
 	"lib/analysis/common/debug.hpp"
+	"lib/analysis/common/pass_context.hpp"
 	"lib/analysis/common/provider.hpp"
 	"lib/analysis/lru_reg/lru_reg.hpp"
 	"lib/analysis/observer/observer.hpp"
@@ -112,7 +113,6 @@ set(obfuscator-lib_SOURCES
 	"lib/pe/rebuilder/rebuilder.hpp"
 	"lib/util/format.hpp"
 	"lib/util/iterators.hpp"
-	"lib/util/passes.hpp"
 	"lib/util/sections.hpp"
 	"lib/util/structs.hpp"
 	"lib/util/types.hpp"
@@ -145,6 +145,7 @@ set(obfuscator_SOURCES
 	"lib/analysis/bb_decomp/bb_decomp.hpp"
 	"lib/analysis/common/common.hpp"
 	"lib/analysis/common/debug.hpp"
+	"lib/analysis/common/pass_context.hpp"
 	"lib/analysis/common/provider.hpp"
 	"lib/analysis/lru_reg/lru_reg.hpp"
 	"lib/analysis/observer/observer.hpp"
@@ -201,7 +202,6 @@ set(obfuscator_SOURCES
 	"lib/pe/rebuilder/rebuilder.hpp"
 	"lib/util/format.hpp"
 	"lib/util/iterators.hpp"
-	"lib/util/passes.hpp"
 	"lib/util/sections.hpp"
 	"lib/util/structs.hpp"
 	"lib/util/types.hpp"
@@ -233,10 +233,12 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"tests/func_parser/map/test.map.compilers.cpp"
 		"tests/func_parser/map/test.map.ida.cpp"
 		"tests/func_parser/test.pdb.compilers.cpp"
+		"tests/transforms/test.decomp_break.cpp"
 		"lib/analysis/analysis.hpp"
 		"lib/analysis/bb_decomp/bb_decomp.hpp"
 		"lib/analysis/common/common.hpp"
 		"lib/analysis/common/debug.hpp"
+		"lib/analysis/common/pass_context.hpp"
 		"lib/analysis/common/provider.hpp"
 		"lib/analysis/lru_reg/lru_reg.hpp"
 		"lib/analysis/observer/observer.hpp"
@@ -293,7 +295,6 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"lib/pe/rebuilder/rebuilder.hpp"
 		"lib/util/format.hpp"
 		"lib/util/iterators.hpp"
-		"lib/util/passes.hpp"
 		"lib/util/sections.hpp"
 		"lib/util/structs.hpp"
 		"lib/util/types.hpp"
@@ -313,6 +314,7 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		obfuscator-project
 		obfuscator::lib
 		GTest::gtest_main
+		unicorn
 	)
 
 	set_target_properties(obfuscator-tests PROPERTIES

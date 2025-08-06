@@ -29,7 +29,7 @@ condition = "build-tests"
 type = "executable"
 sources = ["tests/**.cpp", "lib/**.hpp"]
 include-directories = ["tests/"]
-link-libraries = ["obfuscator-project", "obfuscator::lib", "GTest::gtest_main"]
+link-libraries = ["obfuscator-project", "obfuscator::lib", "GTest::gtest_main", "unicorn"]
 cmake-after = """
 FetchContent_MakeAvailable(resources)
 target_compile_definitions(obfuscator-tests PRIVATE OBFUSCATOR_RESOURCES_PATH="${resources_SOURCE_DIR}")

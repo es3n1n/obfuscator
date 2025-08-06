@@ -30,6 +30,11 @@ endif()
 
 # Options
 option(OBFUSCATOR_BUILD_TESTS "" ON)
+option(UNICORN_LEGACY_STATIC_ARCHIVE "" OFF)
+option(BUILD_SHARED_LIBS "" OFF)
+
+# Variables
+set(UNICORN_ARCH aarch64)
 
 project(obfuscator
 	LANGUAGES

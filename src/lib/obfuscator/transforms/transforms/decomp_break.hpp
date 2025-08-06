@@ -1,6 +1,7 @@
 #pragma once
 #include "obfuscator/transforms/scheduler.hpp"
 #include "obfuscator/transforms/transforms/util/bcf.hpp"
+#include "obfuscator/transforms/transforms/util/opaque_predicates.hpp"
 #include <es3n1n/common/random.hpp>
 
 namespace obfuscator::transforms {

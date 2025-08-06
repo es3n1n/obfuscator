@@ -7,7 +7,7 @@
 namespace analysis::bb_decomp {
     template <pe::any_image_t Img>
     void Instance<Img>::collect_jumptables() {
-        const auto machine_mode = image_->guess_machine_mode();
+        const auto machine_mode = Img::guess_machine_mode();
 
         for (auto& basic_block : std::views::values(basic_blocks_)) {
             for (std::size_t i = 0; i < basic_block->size(); ++i) {
@@ -127,6 +127,10 @@ namespace analysis::bb_decomp {
 
     template <pe::any_image_t Img>
     void Instance<Img>::collect_jumptable_entries() {
+        if (!image_.has_value()) {
+            throw std::runtime_error("analysis: (jt) no image specified");
+        }
+
         /// Now we have to bruteforce the number of entries per table.
         /// I know, i know, it's not the proper solution; however, parsing
         /// the jumptables isn't that trivial of a task and it requires
@@ -143,7 +147,7 @@ namespace analysis::bb_decomp {
         /// colliding with entries from different jump tables.
         for (auto& [rva, info] : jump_tables_) {
             /// Get the table start
-            auto* table = image_->template rva_to_ptr<std::uint32_t>(rva);
+            auto* table = (*image_)->template rva_to_ptr<std::uint32_t>(rva);
             if (table == nullptr) {
                 throw std::runtime_error("analysis: unable to find the jump table, huh?");
             }
@@ -159,13 +163,13 @@ namespace analysis::bb_decomp {
                 }
 
                 /// Get the entry ptr
-                auto ptr = image_->template rva_to_ptr<std::uint8_t>(entry);
+                auto ptr = (*image_)->template rva_to_ptr<std::uint8_t>(entry);
                 if (!ptr) {
                     break;
                 }
 
                 /// Get the section and check if its executable
-                if (const auto* section = image_->rva_to_section(entry); //
+                if (const auto* section = (*image_)->rva_to_section(entry); //
                     !section->characteristics.cnt_code) {
                     break;
                 }
@@ -198,11 +202,11 @@ namespace analysis::bb_decomp {
 
             /// Copy
             auto mem_op = *pmem_op;
-            auto jmp_reg = zasm::x86::Gp(pjmp_reg->getRoot(image_->guess_machine_mode()).getId()); // eax->rax (just in case)
+            auto jmp_reg = zasm::x86::Gp(pjmp_reg->getRoot(Img::guess_machine_mode()).getId()); // eax->rax (just in case)
 
             /// Remove the imm part (that points to the jump table)
             assert(mem_op.getDisplacement() == rva.as<std::int64_t>());
-            mem_op.setBitSize(jmp_reg.getBitSize(image_->guess_machine_mode()));
+            mem_op.setBitSize(jmp_reg.getBitSize(Img::guess_machine_mode()));
             mem_op.setDisplacement(0);
 
             /// Remove the base

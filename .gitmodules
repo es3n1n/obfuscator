@@ -16,3 +16,6 @@
 [submodule "vendor/common"]
 	path = vendor/common
 	url = https://github.com/es3n1n/common
+[submodule "vendor/unicorn"]
+	path = vendor/unicorn
+	url = https://github.com/unicorn-engine/unicorn.git

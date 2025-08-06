@@ -41,11 +41,6 @@ namespace pe {
     }
 
     template <any_raw_image_t Img>
-    [[nodiscard]] zasm::MachineMode Image<Img>::guess_machine_mode() const {
-        return arch::guess_machine_mode(raw_image);
-    }
-
-    template <any_raw_image_t Img>
     [[nodiscard]] section_t& Image<Img>::find_last_section() const {
         auto result = std::ranges::max_element(sections, [](const section_t& lhs, const section_t& rhs) -> bool { //
             return lhs.virtual_address < rhs.virtual_address;

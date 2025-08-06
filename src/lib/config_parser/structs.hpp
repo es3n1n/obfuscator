@@ -10,9 +10,15 @@ namespace config_parser {
         std::unordered_map<std::string, std::string> values;
     };
 
+    using transform_configurations_t = std::vector<transform_configuration_t>;
+
+    struct nameless_function_configuration_t {
+        transform_configurations_t transform_configurations;
+    };
+
     struct function_configuration_t {
         std::string function_name;
-        std::vector<transform_configuration_t> transform_configurations;
+        transform_configurations_t transform_configurations;
     };
 
     struct obfuscator_config_t {

@@ -1,5 +1,5 @@
 #pragma once
-#include "analysis/analysis.hpp"
+#include "analysis/common/pass_context.hpp"
 #include "util/structs.hpp"
 
 //
@@ -14,6 +14,6 @@ namespace analysis::passes {
         DEFAULT_CT_CTOR_DTOR(bb_insn_passes_t);
         NON_COPYABLE(bb_insn_passes_t);
 
-        static bool apply(Function<Img>* function, Img* image);
+        static bool apply(PassContext<Img>& pass_context);
     };
 } // namespace analysis::passes

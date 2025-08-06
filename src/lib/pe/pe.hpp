@@ -24,7 +24,7 @@ namespace pe {
     template <typename Ty> concept any_raw_image_t = traits::is_any_of_v<Ty, win::image_x86_t, win::image_x64_t>;
 
     /// Wrapper around pe header data, could be improved and hopefully everything could be merged from the
-    ///
+    /// \todo @es3n1n: doc this
     template <any_raw_image_t Img>
     class Image {
     public:
@@ -35,6 +35,8 @@ namespace pe {
         DEFAULT_CT_CTOR_DTOR(Image);
         DEFAULT_COPY(Image);
 
+        using PointerIntegral = std::conditional_t<std::is_same_v<Img, win::image_x64_t>, uint64_t, uint32_t>;
+
         [[nodiscard]] bool is_x64() const;
 
         [[nodiscard]] bool is_valid() const;
@@ -42,8 +44,6 @@ namespace pe {
         [[nodiscard]] std::vector<section_t> find_sections_if(const std::function<bool(const section_t&)>& pred) const;
 
         [[nodiscard]] win::cv_pdb70_t* find_codeview70() const;
-
-        [[nodiscard]] zasm::MachineMode guess_machine_mode() const;
 
         [[nodiscard]] section_t& find_last_section() const;
 
@@ -66,11 +66,6 @@ namespace pe {
             return memory::address{section->raw_data.data()}.offset(offset).template as<std::add_pointer_t<Ty>>();
         }
 
-        template <typename Ty = std::size_t>
-        [[nodiscard]] Ty get_ptr_size() const {
-            return sizeof(std::conditional_t<std::is_same_v<Img, win::image_x64_t>, uint64_t, uint32_t>);
-        }
-
         [[nodiscard]] win::data_directory_t* get_directory(win::directory_id dir_id) const {
             auto nt_hdrs = raw_image->get_nt_headers();
             if (nt_hdrs->optional_header.num_data_directories <= dir_id) {
@@ -80,7 +75,20 @@ namespace pe {
             return &nt_hdrs->optional_header.data_directories.entries[dir_id];
         }
 
+        [[nodiscard]] PointerIntegral get_base() const {
+            return raw_image->get_nt_headers()->optional_header.image_base;
+        }
+
         [[nodiscard]] std::vector<std::uint8_t> rebuild_pe_image();
+
+        [[nodiscard]] constexpr static zasm::MachineMode guess_machine_mode() {
+            return std::is_same_v<Img, win::image_x64_t> ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386;
+        }
+
+        template <typename Ty = std::size_t>
+        [[nodiscard]] constexpr static Ty get_ptr_size() {
+            return sizeof(PointerIntegral);
+        }
 
     private:
         void update_sections();

@@ -13,12 +13,22 @@ namespace analysis::bb_decomp {
     template <pe::any_image_t Img>
     class Instance {
     public:
+        /// Non-nameless function
         Instance(Img* image, const rva_t rva, const std::optional<std::size_t> function_size = std::nullopt)
-            : image_(image), function_start_(rva), function_size_(function_size), program_(std::make_shared<zasm::Program>(image->guess_machine_mode())),
-              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(image_->guess_machine_mode())),
+            : image_(image), function_start_(rva), function_size_(function_size), program_(std::make_shared<zasm::Program>(Img::guess_machine_mode())),
+              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(Img::guess_machine_mode())),
               bb_provider_(std::make_shared<functional_bb_provider_t>()) {
             collect();
         }
+
+        /// Nameless function
+        Instance(std::span<std::uint8_t> function_data)
+            : function_code_(function_data), program_(std::make_shared<zasm::Program>(Img::guess_machine_mode())),
+              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(Img::guess_machine_mode())),
+              bb_provider_(std::make_shared<functional_bb_provider_t>()) {
+            collect();
+        }
+
         ~Instance() = default;
 
         Instance(const Instance& instance)
@@ -58,7 +68,7 @@ namespace analysis::bb_decomp {
         void update_tree();
         void update_rescheduled_cf();
 
-        // jumptables shenainigans
+        // jumptables shenanigans
         void collect_jumptables();
         void collect_jumptable_entries();
         void expand_jumptables();
@@ -94,7 +104,7 @@ namespace analysis::bb_decomp {
         }
 
         [[nodiscard]] std::shared_ptr<bb_t> make_virtual_bb() {
-            auto result = std::make_shared<bb_t>(image_->guess_machine_mode());
+            auto result = std::make_shared<bb_t>(Img::guess_machine_mode());
             virtual_basic_blocks_.emplace_back(result);
             return result;
         }
@@ -108,7 +118,7 @@ namespace analysis::bb_decomp {
                 return false;
             }
 
-            return (rva - function_start_) >= function_size_;
+            return (rva - function_start_.value()) >= function_size_;
         }
 
         [[nodiscard]] std::shared_ptr<bb_t> at(const rva_t rva) {
@@ -116,7 +126,7 @@ namespace analysis::bb_decomp {
                 return it->second;
             }
 
-            basic_blocks_[rva] = std::make_shared<bb_t>(image_->guess_machine_mode());
+            basic_blocks_[rva] = std::make_shared<bb_t>(Img::guess_machine_mode());
             return basic_blocks_[rva];
         }
 
@@ -138,9 +148,13 @@ namespace analysis::bb_decomp {
             return basic_block->push_label(assembler_->getCursor(), bb_provider_.get());
         }
 
-        const Img* image_ = nullptr;
-        rva_t function_start_ = nullptr;
+        /// Not set for nameless functions
+        std::optional<Img*> image_ = nullptr;
+        std::optional<rva_t> function_start_ = std::nullopt;
         std::optional<std::size_t> function_size_ = std::nullopt;
+
+        /// Not set for non-nameless functions
+        std::optional<std::span<std::uint8_t>> function_code_ = std::nullopt;
 
         std::unordered_map<rva_t, std::shared_ptr<bb_t>> basic_blocks_;
         std::vector<std::shared_ptr<bb_t>> virtual_basic_blocks_; // = without the rva

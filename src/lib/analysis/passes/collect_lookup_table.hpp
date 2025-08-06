@@ -8,7 +8,7 @@ namespace analysis::passes {
         DEFAULT_CT_CTOR_DTOR(collect_lookup_table_t);
         NON_COPYABLE(collect_lookup_table_t);
 
-        static bool apply_insn(Function<Img>* function, insn_t& instruction, Img* /*image*/) {
+        static bool apply_insn(PassContext<Img>& ctx, insn_t& instruction) {
             if (!instruction.rva.has_value()) {
                 /// \fixme @es3n1n: this could be pretty bad that we don't push newly
                 /// created insns to the lookup table, although we should be just fine without them
@@ -17,7 +17,7 @@ namespace analysis::passes {
 
             // Building rva<->insn lookup table
             //
-            function->instructions_lookup[*instruction.rva] = &instruction;
+            ctx.function->instructions_lookup[*instruction.rva] = &instruction;
             return true;
         }
     };
