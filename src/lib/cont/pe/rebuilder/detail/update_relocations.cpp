@@ -1,20 +1,20 @@
-#include "pe/rebuilder/rebuilder.hpp"
+#include "cont/pe/rebuilder/rebuilder.hpp"
 #include "util/format.hpp"
 
 #include <list>
 
-namespace pe::detail {
+namespace cont::pe::detail {
     namespace {
         constexpr std::size_t kRelocBlockAlignment = 0x1000;
 
         // Erasing previous relocations from the binary
         //
-        template <any_image_t Img>
-        void erase_relocations(Img* image) {
+        template <AnyRawImage Img>
+        void erase_relocations(Image* image) {
             // Looking for the section that contains relocations
             //
-            auto reloc_section = std::ranges::find_if(image->sections, [](const section_t& sec) -> bool { //
-                return sec.contains_dir.reloc.has_value();
+            auto reloc_section = std::ranges::find_if(image->sections, [](const Section& sec) -> bool { //
+                return sec.directory_info(DirectoryType::Reloc).has_value();
             });
 
             // No relocation dir?
@@ -25,8 +25,8 @@ namespace pe::detail {
 
             // Obtaining reloc entry offset from the base of section
             //
-            auto reloc_offset = image->raw_image->get_directory(win::directory_id::directory_entry_basereloc)->rva;
-            reloc_offset -= reloc_section->virtual_address;
+            auto reloc_offset = image->raw_image().ptr<Img>()->get_directory(win::directory_id::directory_entry_basereloc)->rva;
+            reloc_offset -= static_cast<std::uint32_t>(reloc_section->virtual_address);
 
             // Obtaining reloc directory and iterating over blocks in order to get the last block
             //
@@ -61,8 +61,7 @@ namespace pe::detail {
 
         // Assembling the new reloc section
         //
-        template <any_image_t Img>
-        void assemble_relocations(Img* image) {
+        void assemble_relocations(Image* image) {
             // No relocations?
             //
             if (image->relocations.empty()) [[unlikely]] {
@@ -79,8 +78,8 @@ namespace pe::detail {
             //	relocation {rva=0x3FFFF}
             // etc
             //
-            std::unordered_map<memory::address, std::list<relocation_t>> blocks;
-            std::size_t section_size = 0ULL;
+            std::unordered_map<memory::address, std::list<Relocation>> blocks;
+            auto section_header = sections::get(sections::e_section_t::RELOC);
 
             // Iterating over relocations and obtaining start RVAs,
             // Estimating section size
@@ -91,7 +90,7 @@ namespace pe::detail {
                 // Accounting new block header if we're creating one
                 //
                 if (!blocks.contains(aligned_rva)) {
-                    section_size += sizeof(win::reloc_block_t);
+                    section_header.size_raw_data += sizeof(win::reloc_block_t);
                 }
 
                 // Prepending relocation to the block
@@ -100,21 +99,20 @@ namespace pe::detail {
 
                 // Accounting entry
                 //
-                section_size += sizeof(win::reloc_entry_t);
+                section_header.size_raw_data += sizeof(win::reloc_entry_t);
             }
 
             // Obtaining a pointer to the directory header
             //
-            auto* dir_header = image->get_directory(win::directory_id::directory_entry_basereloc);
-            if (dir_header == nullptr) {
+            if (const auto* dir_header = image->get_directory(win::directory_id::directory_entry_basereloc); dir_header == nullptr) {
                 throw std::runtime_error("pe: rebuilder: .reloc header not found");
             }
 
             // Inserting the new section with our relocations
             //
-            auto& new_section = image->new_section(sections::e_section_t::RELOC, section_size);
+            auto& new_section = image->new_section(section_header);
             auto section_data = memory::address{new_section.raw_data.data()};
-            auto section_end = section_data.offset(new_section.raw_data.size());
+            const auto section_end = section_data.offset(new_section.raw_data.size());
 
             // Serializing reloc entries
             //
@@ -138,7 +136,7 @@ namespace pe::detail {
                     //
                     const auto reloc_encoded = win::reloc_entry_t{
                         .offset = (relocation.rva - rva).as<uint16_t>(),
-                        .type = relocation.type,
+                        .type = static_cast<win::reloc_type_id>(relocation.type),
                     };
 
                     // Writing it
@@ -151,17 +149,29 @@ namespace pe::detail {
 
             // Mark as sec with relocs
             //
-            new_section.set_contained_dir(win::directory_id::directory_entry_basereloc, 0, section_size);
+            new_section.set_contained_dir(DirectoryType::Reloc, 0, new_section.size_raw_data);
         }
 
-        template <any_image_t Img>
-        void update_relocations_(Img* image, std::vector<std::uint8_t>& data [[maybe_unused]]) {
-            erase_relocations(image);
+        template <AnyRawImage Img>
+        void update_relocations_(Image* image) {
+            erase_relocations<Img>(image);
             assemble_relocations(image);
         }
     } // namespace
 
-    void update_relocations(const ImgWrapped image, std::vector<std::uint8_t>& data) {
-        UNWRAP_IMAGE(void, update_relocations_);
+    void update_relocations(Image* image, const std::vector<std::uint8_t>& data) {
+        std::ignore = data;
+        switch (image->mode()) {
+        case ImageMode::X64: {
+            update_relocations_<win::image_x64_t>(image);
+            break;
+        }
+        case ImageMode::X86: {
+            update_relocations_<win::image_x86_t>(image);
+            break;
+        }
+        default:
+            throw std::out_of_range("cont::pe::detail::update_relocations: Unsupported image mode");
+        }
     }
-} // namespace pe::detail
+} // namespace cont::pe::detail

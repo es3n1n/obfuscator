@@ -1,7 +1,7 @@
 #pragma once
 #include "analysis/common/common.hpp"
 #include "analysis/common/provider.hpp"
-#include "pe/pe.hpp"
+#include "cont/base.hpp"
 
 #include <optional>
 #include <ranges>
@@ -10,21 +10,20 @@
 namespace analysis::bb_decomp {
     /// \brief BB Decomposition instance
     /// \tparam Img Image
-    template <pe::any_image_t Img>
     class Instance {
     public:
         /// Non-nameless function
-        Instance(Img* image, const rva_t rva, const std::optional<std::size_t> function_size = std::nullopt)
-            : image_(image), function_start_(rva), function_size_(function_size), program_(std::make_shared<zasm::Program>(Img::guess_machine_mode())),
-              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(Img::guess_machine_mode())),
-              bb_provider_(std::make_shared<functional_bb_provider_t>()) {
+        explicit Instance(cont::ImageBase* image, const rva_t rva, const std::optional<std::size_t> function_size = std::nullopt)
+            : machine_mode_(image->machine_mode()), image_(image), function_start_(rva), function_size_(function_size),
+              program_(std::make_shared<zasm::Program>(machine_mode_)), assembler_(std::make_shared<zasm::x86::Assembler>(*program_)),
+              decoder_(easm::Decoder(machine_mode_)), bb_provider_(std::make_shared<functional_bb_provider_t>()) {
             collect();
         }
 
         /// Nameless function
-        Instance(std::span<std::uint8_t> function_data)
-            : function_code_(function_data), program_(std::make_shared<zasm::Program>(Img::guess_machine_mode())),
-              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(Img::guess_machine_mode())),
+        Instance(const zasm::MachineMode machine_mode, std::span<std::uint8_t> function_data)
+            : machine_mode_(machine_mode), function_code_(function_data), program_(std::make_shared<zasm::Program>(machine_mode_)),
+              assembler_(std::make_shared<zasm::x86::Assembler>(*program_)), decoder_(easm::Decoder(machine_mode_)),
               bb_provider_(std::make_shared<functional_bb_provider_t>()) {
             collect();
         }
@@ -32,9 +31,9 @@ namespace analysis::bb_decomp {
         ~Instance() = default;
 
         Instance(const Instance& instance)
-            : image_(instance.image_), function_start_(instance.function_start_), function_size_(instance.function_size_),
-              basic_blocks_(instance.basic_blocks_), program_(instance.program_), assembler_(instance.assembler_), decoder_(instance.decoder_),
-              jump_tables_(instance.jump_tables_), bb_provider_(instance.bb_provider_) { }
+            : machine_mode_(instance.machine_mode_), image_(instance.image_), function_start_(instance.function_start_),
+              function_size_(instance.function_size_), basic_blocks_(instance.basic_blocks_), program_(instance.program_), assembler_(instance.assembler_),
+              decoder_(instance.decoder_), jump_tables_(instance.jump_tables_), bb_provider_(instance.bb_provider_) { }
 
         void collect();
         void split();
@@ -104,7 +103,7 @@ namespace analysis::bb_decomp {
         }
 
         [[nodiscard]] std::shared_ptr<bb_t> make_virtual_bb() {
-            auto result = std::make_shared<bb_t>(Img::guess_machine_mode());
+            auto result = std::make_shared<bb_t>(machine_mode_);
             virtual_basic_blocks_.emplace_back(result);
             return result;
         }
@@ -126,7 +125,7 @@ namespace analysis::bb_decomp {
                 return it->second;
             }
 
-            basic_blocks_[rva] = std::make_shared<bb_t>(Img::guess_machine_mode());
+            basic_blocks_[rva] = std::make_shared<bb_t>(machine_mode_);
             return basic_blocks_[rva];
         }
 
@@ -149,7 +148,8 @@ namespace analysis::bb_decomp {
         }
 
         /// Not set for nameless functions
-        std::optional<Img*> image_ = std::nullopt;
+        zasm::MachineMode machine_mode_;
+        std::optional<cont::ImageBase*> image_ = std::nullopt;
         std::optional<rva_t> function_start_ = std::nullopt;
         std::optional<std::size_t> function_size_ = std::nullopt;
 
@@ -168,9 +168,8 @@ namespace analysis::bb_decomp {
         std::shared_ptr<functional_bb_provider_t> bb_provider_;
     };
 
-    template <pe::any_image_t Img>
-    std::vector<bb_t> collect(Img* image, const rva_t rva, std::optional<std::size_t> size = std::nullopt) {
-        const auto inst = Instance<Img>(image, rva, size);
+    inline std::shared_ptr<bb_storage_t> collect(cont::ImageBase* image, const rva_t rva, std::optional<std::size_t> size = std::nullopt) {
+        const auto inst = Instance(image, rva, size);
         return inst.export_blocks();
     }
 } // namespace analysis::bb_decomp

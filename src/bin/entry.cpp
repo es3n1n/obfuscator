@@ -1,24 +1,13 @@
 #include "config_parser/config_parser.hpp"
+#include "cont/cont.hpp"
 #include "obfuscator/obfuscator.hpp"
 #include "obfuscator/transforms/scheduler.hpp"
-#include "pe/arch/arch.hpp"
-#include "pe/common/common.hpp"
 #include <es3n1n/common/files.hpp>
 #include <es3n1n/common/logger.hpp>
 #include <es3n1n/common/random.hpp>
 
 namespace {
-    template <pe::any_raw_image_t Img>
-    void bootstrap(Img* raw_image, config_parser::Config& config) {
-        pe::Image<Img> image(raw_image);
-
-        obfuscator::Instance<decltype(image)> inst(&image, config);
-        inst.run();
-
-        logger::info("startup: bye-bye");
-    }
-
-    int startup(config_parser::Config& config) try {
+    int startup(config_parser::Config& config) {
         rnd::detail::seed(config.obfuscator_config().seed);
         const auto& binary_path = config.obfuscator_config().binary_path;
 
@@ -28,23 +17,21 @@ namespace {
             throw std::runtime_error("Got empty binary");
         }
 
-        auto* img_x64 = reinterpret_cast<win::image_x64_t*>(file->data());
-        auto* img_x86 = reinterpret_cast<win::image_x86_t*>(img_x64);
-
-        if (!pe::common::is_valid(img_x64)) {
-            throw std::runtime_error("Invalid pe header");
+        std::unique_ptr<cont::ImageBase> image;
+        switch (cont::get_image_type(*file)) {
+        case cont::ContImageType::PE:
+            image = std::make_unique<cont::pe::Image>(file->data());
+            logger::info("main: PE image loaded");
+            break;
+        default:
+            throw std::runtime_error("Got unsupported image type");
         }
 
-        if (pe::arch::is_x64(img_x64)) {
-            bootstrap(img_x64, config);
-        } else {
-            bootstrap(img_x86, config);
-        }
+        obfuscator::Instance inst(image.get(), config);
+        inst.run();
 
+        logger::info("startup: bye-bye");
         return 0;
-    } catch (std::runtime_error& err) {
-        logger::critical("RUNTIME ERROR: {}", err.what());
-        return 1;
     }
 } // namespace
 
@@ -53,6 +40,9 @@ int main(const int argc, const char* argv[]) try {
 
     auto config = config_parser::from_argv(argc, argv);
     return startup(config);
+} catch (std::exception& err) {
+    logger::critical("RUNTIME ERROR: {}", err.what());
+    return 1;
 } catch (...) {
     logger::critical("Unknown runtime error");
     return 1;

@@ -1,6 +1,5 @@
 #pragma once
 #include "analysis/lru_reg/lru_reg.hpp"
-#include "pe/pe.hpp"
 
 namespace analysis {
     struct SymVar {
@@ -35,12 +34,11 @@ namespace analysis {
         }
     };
 
-    template <pe::any_image_t Img>
     class VarAlloc {
     public:
         DEFAULT_CT_CTOR_DTOR(VarAlloc);
         DEFAULT_COPY(VarAlloc);
-        explicit VarAlloc(LRUReg<Img>* lru_reg): lru_reg_(lru_reg) { }
+        explicit VarAlloc(LRUReg* lru_reg): lru_reg_(lru_reg) { }
 
         /// \brief Get least recently used register as Gp8
         /// \param random should we choose a random register across least recently used registers?
@@ -87,9 +85,9 @@ namespace analysis {
 
         /// \brief Push flags to stack
         /// \param assembler zasm assembler ptr
-        static void push_flags(zasm::x86::Assembler* assembler) {
+        void push_flags(zasm::x86::Assembler* assembler) const {
             /// \fixme @es3n1n: we should track the instructions that affect CF instead
-            if constexpr (pe::is_x64_v<Img>) {
+            if (lru_reg_->machine_mode() == zasm::MachineMode::AMD64) {
                 assembler->pushfq();
             } else {
                 assembler->pushfd();
@@ -106,8 +104,8 @@ namespace analysis {
 
         /// \brief Pop flags from stack
         /// \param assembler zasm assembler ptr
-        static void pop_flags(zasm::x86::Assembler* assembler) {
-            if constexpr (pe::is_x64_v<Img>) {
+        void pop_flags(zasm::x86::Assembler* assembler) const {
+            if (lru_reg_->machine_mode() == zasm::MachineMode::AMD64) {
                 assembler->popfq();
             } else {
                 assembler->popfd();
@@ -132,6 +130,11 @@ namespace analysis {
         /// \return size in bytes
         [[nodiscard]] std::size_t stack_size() const {
             return stack_space_used_;
+        }
+
+        /// \fixme @es3n1n: this is wrong
+        [[nodiscard]] zasm::MachineMode machine_mode() const noexcept {
+            return lru_reg_->machine_mode();
         }
 
     private:
@@ -168,6 +171,6 @@ namespace analysis {
         /// \brief How many bytes would we need for storing all allocated vars
         std::size_t stack_space_used_ = 0;
         /// \brief LRU registers storage
-        LRUReg<Img>* lru_reg_ = nullptr;
+        LRUReg* lru_reg_ = nullptr;
     };
 } // namespace analysis

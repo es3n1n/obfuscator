@@ -2,13 +2,11 @@
 #include "analysis/bb_decomp/bb_decomp.hpp"
 #include "analysis/common/debug.hpp"
 #include <es3n1n/common/logger.hpp>
+#include <utility>
 
 /// \todo @es3n1n: Notify the linker somehow that it should erase jumptable pointers too
 namespace analysis::bb_decomp {
-    template <pe::any_image_t Img>
-    void Instance<Img>::collect_jumptables() {
-        const auto machine_mode = Img::guess_machine_mode();
-
+    void Instance::collect_jumptables() {
         for (auto& basic_block : std::views::values(basic_blocks_)) {
             for (std::size_t i = 0; i < basic_block->size(); ++i) {
                 const auto& insn = basic_block->instructions.at(i);
@@ -31,7 +29,7 @@ namespace analysis::bb_decomp {
 
                 /// Now we need find its table ptr, we are gonna do this by iterating back and
                 /// matching the load_index and/or base_move
-                for (std::size_t j = i; j != static_cast<std::size_t>(-1); j--) {
+                for (std::size_t j = i; std::cmp_not_equal(j, -1); j--) {
                     const auto& prev_insn = basic_block->instructions.at(j);
 
                     auto match_load_index = [&]() -> void {
@@ -47,7 +45,7 @@ namespace analysis::bb_decomp {
 
                         /// Match the dst reg
                         if (const auto* dst_reg = prev_insn->ref->getOperandIf<zasm::Reg>(0);
-                            dst_reg == nullptr || dst_reg->getRoot(machine_mode).getId() != jmp_reg->getRoot(machine_mode).getId()) {
+                            dst_reg == nullptr || dst_reg->getRoot(machine_mode_).getId() != jmp_reg->getRoot(machine_mode_).getId()) {
                             return;
                         }
 
@@ -88,7 +86,7 @@ namespace analysis::bb_decomp {
 
                         /// Get the dst reg operand
                         const auto* const dst_op = prev_insn->ref->getOperandIf<zasm::Reg>(0);
-                        if (auto* const src_op = prev_insn->ref->getOperandIf<zasm::Mem>(1); //
+                        if (const auto* const src_op = prev_insn->ref->getOperandIf<zasm::Mem>(1); //
                             dst_op == nullptr || src_op == nullptr) {
                             return;
                         }
@@ -98,7 +96,7 @@ namespace analysis::bb_decomp {
                         assert(mem_index_op != nullptr);
 
                         /// If matches, then yeah we found it
-                        if (mem_index_op->getBase().getId() != dst_op->getId()) {
+                        if (mem_index_op == nullptr || mem_index_op->getBase().getId() != dst_op->getId()) {
                             return;
                         }
 
@@ -125,8 +123,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::collect_jumptable_entries() {
+    void Instance::collect_jumptable_entries() {
         if (!image_.has_value()) {
             throw std::runtime_error("analysis: (jt) no image specified");
         }
@@ -147,7 +144,7 @@ namespace analysis::bb_decomp {
         /// colliding with entries from different jump tables.
         for (auto& [rva, info] : jump_tables_) {
             /// Get the table start
-            auto* table = (*image_)->template rva_to_ptr<std::uint32_t>(rva);
+            const auto* table = (*image_)->rva_to_ptr<std::uint32_t>(rva);
             if (table == nullptr) {
                 throw std::runtime_error("analysis: unable to find the jump table, huh?");
             }
@@ -163,8 +160,7 @@ namespace analysis::bb_decomp {
                 }
 
                 /// Get the entry ptr
-                auto ptr = (*image_)->template rva_to_ptr<std::uint8_t>(entry);
-                if (!ptr) {
+                if (const auto* ptr = (*image_)->rva_to_ptr<std::uint8_t>(entry); ptr == nullptr) {
                     break;
                 }
 
@@ -183,8 +179,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::expand_jumptables() {
+    void Instance::expand_jumptables() {
         for (auto& [rva, info] : jump_tables_) {
             /// First, we should replace the
             /// `mov reg, [bla+bla*bla+0x1337]` with `lea reg, [bla+bla*bla]`
@@ -202,11 +197,11 @@ namespace analysis::bb_decomp {
 
             /// Copy
             auto mem_op = *pmem_op;
-            auto jmp_reg = zasm::x86::Gp(pjmp_reg->getRoot(Img::guess_machine_mode()).getId()); // eax->rax (just in case)
+            auto jmp_reg = zasm::x86::Gp(pjmp_reg->getRoot(machine_mode_).getId()); // eax->rax (just in case)
 
             /// Remove the imm part (that points to the jump table)
             assert(mem_op.getDisplacement() == rva.as<std::int64_t>());
-            mem_op.setBitSize(jmp_reg.getBitSize(Img::guess_machine_mode()));
+            mem_op.setBitSize(jmp_reg.getBitSize(machine_mode_));
             mem_op.setDisplacement(0);
 
             /// Remove the base
@@ -314,6 +309,4 @@ namespace analysis::bb_decomp {
             }
         }
     }
-
-    PE_DECL_TEMPLATE_CLASSES(Instance);
 } // namespace analysis::bb_decomp

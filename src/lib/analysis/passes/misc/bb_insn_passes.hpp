@@ -9,11 +9,10 @@
 //
 
 namespace analysis::passes {
-    template <pe::any_image_t Img>
     struct bb_insn_passes_t {
         DEFAULT_CT_CTOR_DTOR(bb_insn_passes_t);
         NON_COPYABLE(bb_insn_passes_t);
 
-        static bool apply(PassContext<Img>& pass_context);
+        static bool apply(PassContext& pass_context);
     };
 } // namespace analysis::passes

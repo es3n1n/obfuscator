@@ -3,26 +3,24 @@
 #include "config_parser/config_parser.hpp"
 #include "func_parser/parser.hpp"
 #include "obfuscator/function.hpp"
-#include "pe/pe.hpp"
 #include "util/structs.hpp"
 
 namespace obfuscator {
-    template <pe::any_image_t Img>
     class Instance {
     public:
-        Instance(Img* image, config_parser::Config& config): image_(image), config_(std::move(config)) { }
-        Instance(): image_(std::nullopt), config_({}) { }
+        Instance(cont::ImageBase* image, config_parser::Config& config): image_(image), image_mode_(image->mode()), config_(std::move(config)) { }
+        explicit Instance(const cont::ImageMode image_mode): image_(std::nullopt), image_mode_(image_mode) { }
 
         DEFAULT_DTOR(Instance);
         NON_COPYABLE(Instance);
 
         struct function_t {
-            analysis::Function<Img> analysed;
+            analysis::Function analysed;
             config_parser::function_configuration_t configuration;
         };
 
         struct nameless_function_t {
-            analysis::Function<Img> analysed;
+            analysis::Function analysed;
             config_parser::nameless_function_configuration_t configuration;
         };
 
@@ -53,11 +51,18 @@ namespace obfuscator {
 
     private:
         static void schedule_transforms(const config_parser::transform_configurations_t& configurations);
-        void obfuscate(const config_parser::transform_configurations_t& configurations, Function<Img>& function, const std::optional<std::string>& function_name = std::nullopt);
+        void obfuscate(const config_parser::transform_configurations_t& configurations, Function& function,
+                       const std::optional<std::string>& function_name = std::nullopt) const;
 
-        std::optional<Img*> image_ = nullptr;
+        /// \fixme @es3n1n: this is wrong
+        [[nodiscard]] zasm::MachineMode machine_mode() const {
+            return image_mode_ == cont::ImageMode::X64 ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386;
+        }
+
+        std::optional<cont::ImageBase*> image_ = nullptr;
+        cont::ImageMode image_mode_;
         config_parser::Config config_;
-        func_parser::Instance<Img> func_parser_;
+        func_parser::Instance func_parser_;
         std::vector<function_t> functions_;
         std::vector<nameless_function_t> nameless_functions_;
     };

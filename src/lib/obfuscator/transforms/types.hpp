@@ -1,7 +1,6 @@
 #pragma once
 #include "analysis/analysis.hpp"
 #include "easm/cursor/cursor.hpp"
-#include "pe/pe.hpp"
 #include "util/types.hpp"
 
 namespace obfuscator {
@@ -10,13 +9,12 @@ namespace obfuscator {
 
     namespace transforms {
         /// \brief Dummy class for junk detection
-        template <pe::any_image_t>
         class DummyTransform { };
     } // namespace transforms
 
     namespace detail {
         /// \brief Raw funcsig getter
-        template <template <pe::any_image_t> class C> // C is not unused!
+        template <class C> // C is not unused!
         [[nodiscard]] constexpr std::string_view get_funcsig() {
 #if PLATFORM_IS_MSVC
             return __FUNCSIG__;
@@ -44,7 +42,7 @@ namespace obfuscator {
         static_assert(junk_info.start != static_cast<std::size_t>(-1), "Unable to find junk");
 
         /// \brief Transform name getter as an array
-        template <template <pe::any_image_t> class C>
+        template <class C>
         constexpr static auto transform_name = [] {
             constexpr auto funcsig = get_funcsig<C>();
             std::array<char, funcsig.size() - junk_info.total + 1> ret{};
@@ -54,13 +52,13 @@ namespace obfuscator {
     } // namespace detail
 
     /// \brief Transform name getter
-    template <template <pe::any_image_t> class C>
+    template <class C>
     [[nodiscard]] constexpr std::string_view get_transform_name() noexcept {
         return {detail::transform_name<C>.data(), detail::transform_name<C>.size() - 1};
     }
 
     /// \brief Transform tag getter
-    template <template <pe::any_image_t> class C>
+    template <class C>
     [[nodiscard]] constexpr TransformTag get_transform_tag() noexcept {
         constexpr std::hash<std::string_view> hash;
         return hash(get_transform_name<C>());

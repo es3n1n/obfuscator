@@ -140,7 +140,7 @@ namespace obfuscator {
         }
 
         /// \brief Get transform config using the transform type
-        template <template <pe::any_image_t> class Ty>
+        template <class Ty>
         [[nodiscard]] TransformSharedConfig& get_for() {
             return get_for(get_transform_tag<Ty>(), get_transform_name<Ty>());
         }

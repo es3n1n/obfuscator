@@ -10,28 +10,30 @@
 #include <list>
 
 namespace analysis {
-    template <pe::any_image_t Img>
     class Function {
     public:
-        Function(Img* image, const func_parser::function_t& func): parsed_func(func) {
-            bb_decomp::Instance<Img> bb_decomp_inst(image, func.rva, func.size);
+        Function(cont::ImageBase* image, const func_parser::function_t& func): image_mode(image->mode()), parsed_func(func), lru_reg(LRUReg(image_mode)) {
+            bb_decomp::Instance bb_decomp_inst(image, func.rva, func.size);
             setup(bb_decomp_inst, image);
         }
 
-        explicit Function(std::span<std::uint8_t> raw_data): parsed_func(std::nullopt) {
-            bb_decomp::Instance<Img> bb_decomp_inst(raw_data);
+        Function(const cont::ImageMode image_mode, const std::span<std::uint8_t> raw_data)
+            : image_mode(image_mode), parsed_func(std::nullopt), lru_reg(LRUReg(image_mode)) {
+            /// \fixme @es3n1n: this is wrong
+            bb_decomp::Instance bb_decomp_inst(image_mode == cont::ImageMode::X64 ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386, raw_data);
             setup(bb_decomp_inst);
         }
 
         ~Function() = default;
         Function(const Function& instance)
-            : program(instance.program), assembler(instance.assembler), observer(instance.observer), bb_storage(instance.bb_storage),
-              parsed_func(instance.parsed_func), range(instance.range), lru_reg(instance.lru_reg), bb_provider(instance.bb_provider) { }
+            : program(instance.program), assembler(instance.assembler), observer(instance.observer), image_mode(instance.image_mode),
+              bb_storage(instance.bb_storage), parsed_func(instance.parsed_func), range(instance.range), lru_reg(instance.lru_reg),
+              bb_provider(instance.bb_provider) { }
 
     private:
-        void apply_passes(std::optional<Img*> image = std::nullopt);
+        void apply_passes(std::optional<cont::ImageBase*> image = std::nullopt);
         void calc_range();
-        void setup(bb_decomp::Instance<Img>& decomp, std::optional<Img*> image = std::nullopt);
+        void setup(bb_decomp::Instance& decomp, std::optional<cont::ImageBase*> image = std::nullopt);
 
     public:
         // A zasm program instance that contains all of our instructions
@@ -39,6 +41,9 @@ namespace analysis {
         std::shared_ptr<zasm::Program> program;
         std::shared_ptr<zasm::x86::Assembler> assembler;
         std::shared_ptr<Observer> observer;
+
+        ///
+        cont::ImageMode image_mode;
 
         // A list of split basic blocks
         //
@@ -54,7 +59,7 @@ namespace analysis {
 
         // Least recently used register info
         //
-        LRUReg<Img> lru_reg;
+        LRUReg lru_reg;
 
         // A list of references within the image, key is the instruction and value is RVA
         // it referenced
@@ -71,9 +76,8 @@ namespace analysis {
         std::shared_ptr<functional_bb_provider_t> bb_provider;
     };
 
-    template <pe::any_image_t Img>
-    Function<Img> analyse(Img* image, const func_parser::function_t& function) {
-        auto result = Function<Img>(image, function);
+    inline Function analyse(cont::ImageBase* image, const func_parser::function_t& function) {
+        auto result = Function(image, function);
         logger::debug("analysis: analysed function {}", function);
         if (auto size = result.range.size(); size < easm::kMaxEntryInstructionSize) {
             throw std::runtime_error(std::format("analysis: Minimal function size is {} bytes, got {}", easm::kMaxEntryInstructionSize, size));
@@ -81,8 +85,7 @@ namespace analysis {
         return result;
     }
 
-    template <pe::any_image_t Img>
-    Function<Img> analyse(std::span<std::uint8_t> function_data) {
-        return Function<Img>(function_data);
+    inline auto analyse(const cont::ImageMode image_mode, const std::span<std::uint8_t> function_data) {
+        return Function(image_mode, function_data);
     }
 } // namespace analysis

@@ -4,12 +4,11 @@
 #include "util/structs.hpp"
 
 namespace analysis::passes {
-    template <pe::any_image_t Img>
     struct label_references_t {
         DEFAULT_CT_CTOR_DTOR(label_references_t);
         NON_COPYABLE(label_references_t);
 
-        static bool apply(PassContext<Img>& ctx) {
+        static bool apply(const PassContext& ctx) {
             // Iterating over referenced RVAs within the function
             //
             for (const auto& [referenced_insn_rva, insn_ptrs] : ctx.function->image_references) {
@@ -48,10 +47,10 @@ namespace analysis::passes {
 
                 // Iterating over instructions that referenced this RVA
                 //
-                for (auto* referrer_ptr : insn_ptrs) {
+                for (const auto* referrer_ptr : insn_ptrs) {
                     // Looking for the imm in this instruction
                     //
-                    const auto imm_operand_index = referrer_ptr->template find_operand_index_if<zasm::Imm>();
+                    const auto imm_operand_index = referrer_ptr->find_operand_index_if<zasm::Imm>();
 
                     // No imm, huh?
                     //

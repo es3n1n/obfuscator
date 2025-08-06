@@ -5,25 +5,24 @@
 #include "analysis/passes/misc/bb_insn_passes.hpp"
 
 namespace analysis {
-    template <pe::any_image_t Img>
-    void Function<Img>::apply_passes(std::optional<Img*> image) {
+    void Function::apply_passes(std::optional<cont::ImageBase*> image) {
         /// \note: @es3n1n:
         ///     for the apply_bb/apply_insn callbacks please check out the file
         ///     `analysis/transforms/misc/bb_insn_passes.hpp`,
         ///     passes that would need to iter bb/insns by themselves should be inserted here
 
         /// Constructing the pass context
-        PassContext<Img> ctx = {
+        PassContext ctx = {
+            .image_mode = image_mode,
             .image = image,
             .function = this,
         };
 
-        passes::bb_insn_passes_t<Img>::apply(ctx);
-        passes::label_references_t<Img>::apply(ctx);
+        passes::bb_insn_passes_t::apply(ctx);
+        passes::label_references_t::apply(ctx);
     }
 
-    template <pe::any_image_t Img>
-    void Function<Img>::calc_range() {
+    void Function::calc_range() {
         // Reset state
         //
         range.start = std::numeric_limits<std::uintptr_t>::max();
@@ -46,8 +45,7 @@ namespace analysis {
         });
     }
 
-    template <pe::any_image_t Img>
-    void Function<Img>::setup(bb_decomp::Instance<Img>& decomp, std::optional<Img*> image) {
+    void Function::setup(bb_decomp::Instance& decomp, std::optional<cont::ImageBase*> image) {
         bb_storage = decomp.export_blocks();
         program = decomp.export_program();
         calc_range();
@@ -68,11 +66,11 @@ namespace analysis {
 
         /// Set VA finder
         if (image.has_value()) {
-            bb_provider->set_va_finder(
-                [img_base = (*image)->get_base(), provider = bb_provider.get()](const rva_t va, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
-                    /// Substract base and find by RVA
-                    return provider->find_by_start_rva(va - img_base, callee); //
-                });
+            bb_provider->set_va_finder([img_base = (*image)->get_image_base(),
+                                        provider = bb_provider.get()](const rva_t va, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
+                /// Substract base and find by RVA
+                return provider->find_by_start_rva(va - img_base, callee); //
+            });
         } else {
             bb_provider->set_va_finder([](const rva_t, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
                 assert(false); /// Nameless functions does not have VAs
@@ -115,6 +113,4 @@ namespace analysis {
 
         apply_passes(image);
     }
-
-    PE_DECL_TEMPLATE_CLASSES(Function);
 } // namespace analysis

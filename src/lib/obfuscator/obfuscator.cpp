@@ -4,6 +4,7 @@
 #include "obfuscator/config_merger/config_merger.hpp"
 #include "obfuscator/function.hpp"
 #include "obfuscator/transforms/scheduler.hpp"
+#include "util/sections.hpp"
 
 #include <es3n1n/common/logger.hpp>
 #include <es3n1n/common/progress.hpp>
@@ -12,8 +13,7 @@
 namespace obfuscator {
     constexpr size_t kTextSectionAlignment = 0x10;
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::setup() {
+    void Instance::setup() {
         /// Make sure that image is set
         if (!image_.has_value()) {
             throw std::runtime_error("obfuscator: unable to setup with image_ being nullopt");
@@ -43,9 +43,8 @@ namespace obfuscator {
         }
     }
 
-    template <pe::any_image_t Img>
-    typename Instance<Img>::nameless_function_t& Instance<Img>::add_function(std::span<std::uint8_t> raw_function_bytes,
-                                                                             const config_parser::nameless_function_configuration_t& configuration) {
+    Instance::nameless_function_t& Instance::add_function(std::span<std::uint8_t> raw_function_bytes,
+                                                          const config_parser::nameless_function_configuration_t& configuration) {
         assert(!raw_function_bytes.empty()); /// what are you doing man
 
         /// Schedule transforms
@@ -53,13 +52,12 @@ namespace obfuscator {
 
         /// Analyse function and store it
         return nameless_functions_.emplace_back(nameless_function_t{
-            .analysed = analysis::analyse<Img>(raw_function_bytes),
+            .analysed = analysis::analyse(image_mode_, raw_function_bytes),
             .configuration = configuration,
         });
     }
 
-    template <pe::any_image_t Img>
-    typename Instance<Img>::function_t& Instance<Img>::add_function(const config_parser::function_configuration_t& configuration) {
+    Instance::function_t& Instance::add_function(const config_parser::function_configuration_t& configuration) {
         /// Make sure image is set
         if (!image_.has_value()) {
             throw std::runtime_error("obfuscator: unable to add non-nameless function with image_ being nullopt");
@@ -82,8 +80,7 @@ namespace obfuscator {
         });
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::obfuscate() {
+    void Instance::obfuscate() {
         /// Debug log
         logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size() + nameless_functions_.size());
 
@@ -92,25 +89,24 @@ namespace obfuscator {
         }
 
         /// Apply global vars from the config
-        config_merger::apply_global_vars<Img>(config_);
+        config_merger::apply_global_vars(config_);
 
         /// Iterate over the named functions and obfuscate them
         for (const auto& func : functions_) {
-            auto obf_func = obfuscator::Function<Img>(func.analysed);
+            auto obf_func = obfuscator::Function(func.analysed);
             obfuscate(func.configuration.transform_configurations, obf_func, func.configuration.function_name);
         }
 
         /// Iterate over the nameless functions and obfuscate them
         for (const auto& func : nameless_functions_) {
-            auto obf_func = obfuscator::Function<Img>(func.analysed);
+            auto obf_func = obfuscator::Function(func.analysed);
             obfuscate(func.configuration.transform_configurations, obf_func);
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::obfuscate(const config_parser::transform_configurations_t& configurations, Function<Img>& function,
-                                  const std::optional<std::string>& function_name) {
-        auto& scheduler = TransformScheduler::get().for_arch<Img>();
+    void Instance::obfuscate(const config_parser::transform_configurations_t& configurations, Function& function,
+                             const std::optional<std::string>& function_name) const {
+        auto& scheduler = TransformScheduler::get().container;
 
         /// Export tags that this function would need
         auto tags = std::views::all(configurations) |
@@ -127,7 +123,7 @@ namespace obfuscator {
         /// needed for like  every possible function/transform
         auto execute_transform = [configurations](const TransformTag tag, const std::function<void(TransformContext&)>& callback,
                                                   const bool check_chances = true) -> void {
-            auto preset = std::ranges::find_if(configurations, [tag](auto&& it) -> bool {
+            const auto preset = std::ranges::find_if(configurations, [tag](auto&& it) -> bool {
                 return it.tag == tag; //
             });
             if (preset == std::end(configurations)) {
@@ -135,7 +131,7 @@ namespace obfuscator {
             }
 
             /// Apply the preset
-            config_merger::apply_config<Img>(*preset);
+            config_merger::apply_config(*preset);
 
             /// Get the shared config and check the chance
             auto& cfg = TransformSharedConfigStorage::get().get_for(tag);
@@ -158,7 +154,7 @@ namespace obfuscator {
             }
         };
         auto execute_transform_no_chances = [&](const TransformTag tag, const std::function<void(TransformContext&)>& callback) -> void {
-            return execute_transform(tag, callback, false);
+            execute_transform(tag, callback, false);
         };
 
         /// \note @es3n1n: We can't iterate through the insns/bbs and execute transforms
@@ -182,7 +178,7 @@ namespace obfuscator {
 
             /// Apply analysis insn transforms
             if (transform->feature(TransformFeaturesSet::HAS_INSN_TRANSFORM)) {
-                for (auto& basic_block : function.bb_storage->temp_copy()) {
+                for (const auto& basic_block : function.bb_storage->temp_copy()) {
                     for (auto& insn : basic_block->temp_insns_copy()) {
                         execute_transform(tag, [&function, &transform, &insn](auto& ctx) -> void {
                             transform->run_on_insn(ctx, &function, insn.get()); //
@@ -208,8 +204,7 @@ namespace obfuscator {
         /// We are done here
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::assemble() {
+    void Instance::assemble() {
         /// Make sure that we have an image to deal with
         if (!image_.has_value()) {
             throw std::runtime_error("obfuscate: no image available for assembling");
@@ -222,17 +217,17 @@ namespace obfuscator {
 
         /// Estimating section size
         auto size_estimation_progress = progress::Progress("obfuscator: estimating section size", functions_.size());
-        std::size_t section_size = 0;
+        auto sec_header = sections::get(sections::e_section_t::CODE);
         for (auto& func : functions_) {
             const auto program_size = easm::estimate_program_size(*func.analysed.program);
-            section_size += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
+            sec_header.size_raw_data += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
             size_estimation_progress.step();
         }
-        logger::debug("assemble: estimated new section size: {:#x}", section_size);
+        logger::debug("assemble: estimated new section size: {:#x}", sec_header.size_raw_data);
 
         /// Allocate new section
-        auto img_base = (*image_)->get_base();
-        auto& new_sec = (*image_)->new_section(sections::e_section_t::CODE, section_size);
+        auto img_base = (*image_)->get_image_base();
+        auto& new_sec = (*image_)->new_section(sec_header);
         memory::address virt_address = new_sec.virtual_address;
 
         /// Iterate over the obfuscated functions
@@ -268,7 +263,7 @@ namespace obfuscator {
 
             /// Insert the jmp to obfuscated routine at the very beginning of the function
             auto* func_start_ptr = (*image_)->rva_to_ptr(func.range.start);
-            auto jmp_data = easm::encode_jmp(Img::guess_machine_mode(), func.range.start + img_base, virt_address + img_base);
+            auto jmp_data = easm::encode_jmp(machine_mode(), func.range.start + img_base, virt_address + img_base);
             if (!jmp_data.has_value()) {
                 throw std::runtime_error("assemble: unable to encode jmp");
             }
@@ -304,13 +299,13 @@ namespace obfuscator {
 
                 /// Store the new relocation data
                 (*image_)->relocations[relocation.address - img_base] =
-                    pe::relocation_t{.rva = memory::address{static_cast<uintptr_t>(relocation.address - img_base)},
+                    cont::Relocation{.rva = memory::address{static_cast<uintptr_t>(relocation.address - img_base)},
                                      .size = static_cast<std::uint8_t>(getBitSize(relocation.size) / CHAR_BIT),
-                                     .type = win_reloc_type};
+                                     .type = to_cont(win_reloc_type)};
             }
 
             /// Align size and increment offset
-            const auto aligned_size = memory::address{assembled.data.size()}.align_up(kTextSectionAlignment).as<std::size_t>();
+            const auto aligned_size = memory::address{assembled.data.size()}.align_up(kTextSectionAlignment).as<std::ptrdiff_t>();
             virt_address = virt_address.offset(aligned_size);
 
             /// Increment progress bar
@@ -320,15 +315,14 @@ namespace obfuscator {
         logger::info("assemble: assembled {} functions", functions_.size());
     }
 
-    template <pe::any_image_t Img>
-    std::filesystem::path Instance<Img>::save() {
+    std::filesystem::path Instance::save() {
         /// We can't rebuild PE without any source PE data :shrug:
         if (!image_.has_value()) {
             throw std::runtime_error("assemble: no image for saving");
         }
 
         logger::info("obfuscator: saving..");
-        auto new_img = (*image_)->rebuild_pe_image();
+        auto new_img = (*image_)->rebuild_image();
 
         auto out_path = config_.obfuscator_config().binary_path;
 
@@ -345,22 +339,18 @@ namespace obfuscator {
         return out_path;
     }
 
-    template <pe::any_image_t Img>
-    std::filesystem::path Instance<Img>::run() {
+    std::filesystem::path Instance::run() {
         setup();
         obfuscate();
         assemble();
         return save();
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::schedule_transforms(const config_parser::transform_configurations_t& configurations) {
+    void Instance::schedule_transforms(const config_parser::transform_configurations_t& configurations) {
         /// Enable needed transforms
         auto& scheduler = TransformScheduler::get();
         for (const auto& [tag, _] : configurations) {
             scheduler.enable_transform(tag);
         }
     }
-
-    PE_DECL_TEMPLATE_CLASSES(Instance);
 } // namespace obfuscator

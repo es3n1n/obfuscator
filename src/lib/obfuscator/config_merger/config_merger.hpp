@@ -10,8 +10,7 @@ namespace obfuscator::config_merger {
         /// \param transform Transform pointer
         /// \param type Var type
         /// \return vector of names
-        template <pe::any_image_t Img>
-        std::vector<std::string> get_all_required_vars_for(Transform<Img>* transform, const TransformConfig::Var::Type type) {
+        inline std::vector<std::string> get_all_required_vars_for(Transform* transform, const TransformConfig::Var::Type type) {
             std::vector<std::string> required_var_names = {};
 
             transform->iter_vars([&required_var_names, type](const TransformConfig::Var& var) -> void {
@@ -33,9 +32,8 @@ namespace obfuscator::config_merger {
         /// \param type var type
         /// \param values config values
         /// \param shared_config shared config reference
-        template <pe::any_image_t Img>
-        void apply_vars(Transform<Img>* transform, const TransformConfig::Var::Type type, const std::unordered_map<std::string, std::string>& values,
-                        TransformSharedConfig& shared_config) {
+        inline void apply_vars(Transform* transform, const TransformConfig::Var::Type type, const std::unordered_map<std::string, std::string>& values,
+                               TransformSharedConfig& shared_config) {
             /// Collect all required vars
             auto required_var_names = get_all_required_vars_for(transform, type);
 
@@ -78,10 +76,9 @@ namespace obfuscator::config_merger {
     /// \brief Apply transform global vars
     /// \tparam Img X64 or X86 image
     /// \param config config reference
-    template <pe::any_image_t Img>
-    void apply_global_vars(config_parser::Config& config) {
+    inline void apply_global_vars(config_parser::Config& config) {
         /// Get the scheduler
-        auto& scheduler = TransformScheduler::get().for_arch<Img>();
+        const auto& scheduler = TransformScheduler::get().container;
 
         /// Iterate over the global defined vars for the transform
         for (auto& [tag, values] : config.global_transforms_config()) {
@@ -97,11 +94,10 @@ namespace obfuscator::config_merger {
     /// \brief Apply user-defined configuration for the transform
     /// \tparam Img X64 or X86 image
     /// \param transform_config user-defined options
-    template <pe::any_image_t Img>
-    void apply_config(const config_parser::transform_configuration_t& transform_config) {
+    inline void apply_config(const config_parser::transform_configuration_t& transform_config) {
         /// Get all the needed stuff
-        auto& scheduler = TransformScheduler::get().for_arch<Img>();
-        auto& transform = scheduler.transforms.at(transform_config.tag);
+        const auto& scheduler = TransformScheduler::get().container;
+        const auto& transform = scheduler.transforms.at(transform_config.tag);
         auto& shared_config = TransformSharedConfigStorage::get().get_for(transform_config.tag);
 
         /// Reset all PER_FUNCTION vars

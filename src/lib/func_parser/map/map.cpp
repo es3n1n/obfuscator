@@ -17,7 +17,7 @@ namespace func_parser::map {
         }
     } // namespace
 
-    function_list_t discover_functions(const std::filesystem::path& map_path, const std::vector<pe::section_t>& sections) {
+    function_list_t discover_functions(const std::filesystem::path& map_path, const std::vector<cont::Section>& sections) {
         // Reading map file
         //
         const auto map_content = files::read_file(map_path);

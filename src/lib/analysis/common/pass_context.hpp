@@ -1,11 +1,11 @@
 #pragma once
 #include "analysis/analysis.hpp"
-#include "pe/pe.hpp"
+#include "cont/base.hpp"
 
 namespace analysis {
-    template <pe::any_image_t Img>
     struct PassContext {
-        std::optional<Img*> image;
-        Function<Img>* function;
+        cont::ImageMode image_mode;
+        std::optional<cont::ImageBase*> image;
+        Function* function;
     };
 } // namespace analysis

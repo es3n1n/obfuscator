@@ -12,8 +12,7 @@ namespace obfuscator::transforms {
         };
     } // namespace detail::anti_ida_decomp
 
-    template <pe::any_image_t Img>
-    class DecompBreak final : public BBTransform<Img> {
+    class DecompBreak final : public BBTransform {
     public:
         enum Var : std::uint8_t {
             BREAK_IDA = 0,
@@ -29,7 +28,7 @@ namespace obfuscator::transforms {
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
-        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* function, analysis::bb_t* bb) override {
+        void run_on_bb(TransformContext& /*ctx*/, Function* function, analysis::bb_t* bb) override {
             /// No successors?
             if (bb->successors.empty()) {
                 return;
@@ -41,7 +40,7 @@ namespace obfuscator::transforms {
             assert(ghidra_opt || ida_opt);
 
             /// Generate an opaque predicate and insert ENTER -1 somewhere over there
-            transform_util::generate_bogus_confrol_flow<Img>(
+            transform_util::generate_bogus_control_flow(
                 function, bb,
                 [&](analysis::bb_t* new_bb) -> void {
                     /// Set cursor somewhere in the BB (-2 because i don't feel like placing it after the last insn)
@@ -62,12 +61,13 @@ namespace obfuscator::transforms {
                     }
                     case Var::BREAK_GHIDRA: {
                         auto var_alloc = function->var_alloc();
-                        auto var_1 = var_alloc.get(true);
-                        auto var_2 = var_alloc.get(true);
+                        const auto var_1 = var_alloc.get(true);
+                        const auto var_2 = var_alloc.get(true);
 
-                        as->mov(var_1, pe::is_x64_v<Img> ? zasm::Imm(static_cast<std::int64_t>(-1)) : zasm::Imm(static_cast<std::int32_t>(-1L)));
-                        as->lea(var_1, easm::ptr<Img>(var_1));
-                        as->mov(var_2, easm::ptr<Img>(var_1));
+                        as->mov(var_1, function->machine_mode == zasm::MachineMode::AMD64 ? zasm::Imm(static_cast<std::int64_t>(-1)) :
+                                                                                            zasm::Imm(static_cast<std::int32_t>(-1L)));
+                        as->lea(var_1, easm::ptr(function->machine_mode, var_1));
+                        as->mov(var_2, easm::ptr(function->machine_mode, var_1));
                         new_bb->push_last_N_insns(as, function->bb_provider.get(), 3);
                         break;
                     }
@@ -76,8 +76,7 @@ namespace obfuscator::transforms {
                         break;
                     }
                 },
-                [&](zasm::x86::Assembler* assembler, zasm::Label successor_label, zasm::Label dead_branch_label,
-                    analysis::VarAlloc<Img>* var_alloc) -> void {
+                [&](zasm::x86::Assembler* assembler, zasm::Label successor_label, zasm::Label dead_branch_label, analysis::VarAlloc* var_alloc) -> void {
                     transform_util::generate_opaque_predicate(assembler, successor_label, dead_branch_label, var_alloc); //
                 });
         }

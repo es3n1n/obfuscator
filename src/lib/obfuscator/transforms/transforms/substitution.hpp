@@ -3,17 +3,16 @@
 #include <es3n1n/common/random.hpp>
 
 namespace obfuscator::transforms {
-    template <pe::any_image_t Img>
-    class Substitution final : public BBTransform<Img> {
+    class Substitution final : public BBTransform {
         /// Math operations replacement table
-        using Cbk = std::function<void(Function<Img>*, analysis::insn_t*)>;
+        using Cbk = std::function<void(Function*, analysis::insn_t*)>;
         std::unordered_map<std::uint16_t, std::vector<Cbk>> replacements;
 
         /// Temporary operand holder for substitutions
         struct tmp_op_holder_t {
             /// Constructor that captures the desired operands
-            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc<Img>& var_alloc, const analysis::insn_t* insn,
-                            const zasm::Operand& operand, const std::optional<zasm::Operand>& other_operand = std::nullopt)
+            tmp_op_holder_t(zasm::x86::Assembler* assembler, analysis::VarAlloc& var_alloc, const analysis::insn_t* insn, const zasm::Operand& operand,
+                            const std::optional<zasm::Operand>& other_operand = std::nullopt)
                 : var_alloc(var_alloc), operand(operand), assembler(assembler) {
                 /// No need to alloc anything
                 if (operand.holds<zasm::Reg>()) {
@@ -53,7 +52,7 @@ namespace obfuscator::transforms {
             }
 
             /// Var alloc reference
-            analysis::VarAlloc<Img>& var_alloc;
+            analysis::VarAlloc& var_alloc;
             /// Operand holder
             zasm::Operand operand;
             /// Stored symbolic var
@@ -66,7 +65,7 @@ namespace obfuscator::transforms {
         /// \brief Optional callback that initializes config variables
         void init_config() override {
             /// x + y => x - (-y)
-            replacements[ZYDIS_MNEMONIC_ADD].emplace_back([](Function<Img>* func, analysis::insn_t* insn) -> void {
+            replacements[ZYDIS_MNEMONIC_ADD].emplace_back([](Function* func, analysis::insn_t* insn) -> void {
                 auto op1 = insn->ref->getOperand<zasm::Operand>(0);
                 auto op2 = insn->ref->getOperand<zasm::Operand>(1);
 
@@ -80,7 +79,7 @@ namespace obfuscator::transforms {
             });
 
             /// x - y => x + (-y)
-            replacements[ZYDIS_MNEMONIC_SUB].emplace_back([](Function<Img>* func, analysis::insn_t* insn) -> void {
+            replacements[ZYDIS_MNEMONIC_SUB].emplace_back([](Function* func, analysis::insn_t* insn) -> void {
                 auto op1 = insn->ref->getOperand<zasm::Operand>(0);
                 auto op2 = insn->ref->getOperand<zasm::Operand>(1);
 
@@ -94,7 +93,7 @@ namespace obfuscator::transforms {
             });
 
             /// x & y => (x ^ ~y) & x
-            replacements[ZYDIS_MNEMONIC_AND].emplace_back([](Function<Img>* func, analysis::insn_t* insn) -> void {
+            replacements[ZYDIS_MNEMONIC_AND].emplace_back([](Function* func, analysis::insn_t* insn) -> void {
                 auto op1 = insn->ref->getOperand<zasm::Operand>(0);
                 auto op2 = insn->ref->getOperand<zasm::Operand>(1);
 
@@ -119,7 +118,7 @@ namespace obfuscator::transforms {
         /// \brief Transform zasm node
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
-        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* function, analysis::bb_t* bb) override {
+        void run_on_bb(TransformContext& /*ctx*/, Function* function, analysis::bb_t* bb) override {
             /// Iterating over the instructions
             for (auto& insn : bb->temp_insns_copy()) {
                 if (easm::affects_sp(function->machine_mode, *insn->ref)) {

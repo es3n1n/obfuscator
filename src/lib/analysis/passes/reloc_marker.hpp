@@ -4,12 +4,11 @@
 #include "util/structs.hpp"
 
 namespace analysis::passes {
-    template <pe::any_image_t Img>
     struct reloc_marker_t {
         DEFAULT_CT_CTOR_DTOR(reloc_marker_t);
         NON_COPYABLE(reloc_marker_t);
 
-        static bool apply_insn(PassContext<Img>& ctx, insn_t& instruction) {
+        static bool apply_insn(PassContext& ctx, insn_t& instruction) {
             // Would be set to true if instruction contains imm/ip operands
             //
             const zasm::Imm* imm = instruction.find_operand_if<zasm::Imm>();
@@ -22,11 +21,12 @@ namespace analysis::passes {
             }
 
             /// \fixme @es3n1n: we always assume base at 0x0 for nameless functions
-            typename Img::PointerIntegral image_base = 0;
+            std::uintptr_t image_base = 0;
             if (ctx.image.has_value()) {
-                image_base = (*ctx.image)->get_base();
+                image_base = (*ctx.image)->get_image_base();
             }
-            const auto ptr_size = Img::get_ptr_size();
+            /// \fixme @es3n1n: move to util
+            const auto ptr_size = ctx.image_mode == cont::ImageMode::X64 ? sizeof(std::uint64_t) : sizeof(std::uint32_t);
 
             // Force reloc mem
             if (mem != nullptr && mem->getBase().isIP()) {

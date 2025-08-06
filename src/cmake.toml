@@ -2,7 +2,7 @@
 type = "interface"
 compile-features = ["cxx_std_23"]
 compile-definitions = ["NOMINMAX"]
-msvc.compile-options = ["/wd4661", "/MP"]
+msvc.compile-options = ["/MP"]
 
 [target.obfuscator-lib]
 alias = "obfuscator::lib"

@@ -1,14 +1,13 @@
 #pragma once
+#include "cont/base.hpp"
 #include "func_parser/common/common.hpp"
-#include "pe/pe.hpp"
 #include <es3n1n/common/logger.hpp>
 
 namespace func_parser::sanitizer {
-    template <pe::any_image_t Img>
-    void sanitize_function_list(function_list_t& items, const Img* image) noexcept {
+    inline void sanitize_function_list(function_list_t& items, const cont::ImageBase* image) noexcept {
         // Obtaining executable sections
         //
-        const auto exec_sections = image->find_sections_if([](const pe::section_t& sec) -> bool { //
+        const auto exec_sections = image->find_sections_if([](const cont::Section& sec) -> bool { //
             return sec.characteristics.mem_execute;
         });
 

@@ -1,6 +1,5 @@
 #pragma once
-#include <../../../vendor/linux-pe/includes/linuxpe>
-#include <cstdint>
+#include "cont/base.hpp"
 
 namespace sections {
     enum class e_section_t : std::uint8_t {
@@ -15,29 +14,34 @@ namespace sections {
         static_assert(RELOC_NAME.size() == LEN_SHORT_STR);
         static_assert(CODE_NAME.size() == LEN_SHORT_STR);
 
-        constexpr win::section_characteristics_t RELOC_CHARACTERISTICS = {.flags = 0x42000040}; // read, discard, init
-        constexpr win::section_characteristics_t CODE_CHARACTERISTICS = {.flags = 0x60000020}; // contains code, exec, read
+        constexpr cont::Section::Characteristics RELOC_CHARACTERISTICS = {.flags = 0x00210002}; // read, discard, contains init data
+        constexpr cont::Section::Characteristics CODE_CHARACTERISTICS = {.flags = 0x00300001}; // contains code, exec, read
     } // namespace detail
 
-    inline std::string name(const e_section_t sec) {
+    inline cont::Section get(const e_section_t sec) {
         switch (sec) {
-        case e_section_t::RELOC:
-            return detail::RELOC_NAME.data();
-        case e_section_t::CODE:
-            return detail::CODE_NAME.data();
+        case e_section_t::RELOC: {
+            return cont::Section{
+                .name = detail::RELOC_NAME.data(),
+                .virtual_size = 0U,
+                .virtual_address = 0U,
+                .size_raw_data = 0U,
+                .ptr_raw_data = 0U,
+                .characteristics = detail::RELOC_CHARACTERISTICS,
+            };
         }
-
-        std::unreachable();
-    }
-
-    inline win::section_characteristics_t characteristics(const e_section_t section) {
-        switch (section) {
-        case e_section_t::RELOC:
-            return detail::RELOC_CHARACTERISTICS;
-        case e_section_t::CODE:
-            return detail::CODE_CHARACTERISTICS;
+        case e_section_t::CODE: {
+            return cont::Section{
+                .name = detail::CODE_NAME.data(),
+                .virtual_size = 0U,
+                .virtual_address = 0U,
+                .size_raw_data = 0U,
+                .ptr_raw_data = 0U,
+                .characteristics = detail::CODE_CHARACTERISTICS,
+            };
         }
-
-        std::unreachable();
+        default:
+            throw std::out_of_range("sections::get: Unsupported section type");
+        }
     }
 } // namespace sections

@@ -8,9 +8,8 @@ namespace obfuscator::transform_util {
     /// \param successor_label Successor
     /// \param dead_branch_label Dead branch
     /// \param var_alloc_ptr Var allocator
-    template <pe::any_image_t Img>
-    void generate_opaque_predicate(zasm::x86::Assembler* as, const zasm::Label successor_label, const zasm::Label dead_branch_label,
-                                   analysis::VarAlloc<Img>* var_alloc_ptr) {
+    inline void generate_opaque_predicate(zasm::x86::Assembler* as, const zasm::Label successor_label, const zasm::Label dead_branch_label,
+                                          analysis::VarAlloc* var_alloc_ptr) {
         /// I don't feel like changing these stubs -- fixme
         auto& var_alloc = *var_alloc_ptr;
 
@@ -19,7 +18,7 @@ namespace obfuscator::transform_util {
         var_alloc.push(as);
 
         /// Mov random var from stack to x
-        as->mov(x, zasm::x86::dword_ptr(easm::sp_for_arch<Img>(), rnd::number<uint32_t>(0, 0x250)));
+        as->mov(x, zasm::x86::dword_ptr(easm::sp_for_arch(var_alloc_ptr->machine_mode()), rnd::number<uint32_t>(0, 0x250)));
 
         /// \note @es3n1n: Generated using `scripts/opaque_predicates_expr_gen`
         switch (rnd::number<std::size_t>(0, 66)) {
