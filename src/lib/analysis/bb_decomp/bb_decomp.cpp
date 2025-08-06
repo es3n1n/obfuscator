@@ -79,8 +79,10 @@ namespace analysis::bb_decomp {
         // Expand jumptables
         //
         logger::info("bb_decomp: running phase 2");
-        collect_jumptables();
-        collect_jumptable_entries();
+        if (image_.has_value()) {
+            collect_jumptables();
+            collect_jumptable_entries();
+        }
 
         // Splitting basic blocks (pt.1)
         //

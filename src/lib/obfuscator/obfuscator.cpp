@@ -85,9 +85,9 @@ namespace obfuscator {
     template <pe::any_image_t Img>
     void Instance<Img>::obfuscate() {
         /// Debug log
-        logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size());
+        logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size() + nameless_functions_.size());
 
-        if (functions_.empty()) {
+        if (functions_.empty() && nameless_functions_.empty()) {
             throw std::runtime_error("obfuscator: got 0 functions to protect");
         }
 

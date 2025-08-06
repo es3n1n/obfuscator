@@ -149,7 +149,7 @@ namespace analysis::bb_decomp {
         }
 
         /// Not set for nameless functions
-        std::optional<Img*> image_ = nullptr;
+        std::optional<Img*> image_ = std::nullopt;
         std::optional<rva_t> function_start_ = std::nullopt;
         std::optional<std::size_t> function_size_ = std::nullopt;
 
