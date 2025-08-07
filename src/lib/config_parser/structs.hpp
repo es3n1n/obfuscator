@@ -17,8 +17,20 @@ namespace config_parser {
     };
 
     struct function_configuration_t {
-        std::string function_name;
+        std::optional<std::string> function_name;
+        std::optional<std::ptrdiff_t> rva;
         transform_configurations_t transform_configurations;
+
+        [[nodiscard]] std::string name() const {
+            if (function_name.has_value()) {
+                return *function_name;
+            }
+            if (rva.has_value()) {
+                return std::format("sub_{:x}", *rva);
+            }
+            /// \todo @es3n1n: Swap nameless funcs to use this struct too
+            return "nameless";
+        }
     };
 
     struct obfuscator_config_t {

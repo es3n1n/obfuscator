@@ -13,6 +13,7 @@ link-libraries = [
     "obfuscator-project",
     "zasm",
     "linux-pe",
+    "elf",
     "magic_enum",
     "LLVMDemangle",
     "es3n1n::common",

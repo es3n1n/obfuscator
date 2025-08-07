@@ -92,6 +92,14 @@ namespace config_parser {
                 continue;
             }
 
+            /// Function RVA
+            if (arg_ == "-r" && next_arg_.has_value()) {
+                state.current_function = &result.create_function_config();
+                state.current_function->rva = string_parser::parse_int64(next_arg_.value());
+                skip(1);
+                continue;
+            }
+
             /// Transform configuration start
             if (arg_ == "-t" && next_arg_.has_value() && state.busy()) {
                 state.current_transform = &state.current_function->transform_configurations.emplace_back();

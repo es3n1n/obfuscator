@@ -1,20 +1,22 @@
-//
-// Created by es3n1n on 2025-08-06.
-//
-
 #pragma once
-#include "coff/section_header.hpp"
-#include "nt/directories/dir_relocs.hpp"
-
-#include <es3n1n/common/memory/address.hpp>
-#include <util/structs.hpp>
+#include <coff/section_header.hpp>
+#include <linux/elf.h>
+#include <nt/directories/dir_relocs.hpp>
 #include <zasm/base/mode.hpp>
+
+#include "es3n1n/common/memory/address.hpp"
+#include "util/structs.hpp"
 
 #include <array>
 #include <cassert>
-#include <cstdint>
+#include <string>
 
 namespace cont {
+    enum struct ContImageType : std::uint8_t {
+        PE = 0,
+        ELF = 1,
+    };
+
     enum struct ImageMode : std::uint8_t {
         X64 = 0,
         X86 = 1,
@@ -28,15 +30,19 @@ namespace cont {
         HighAdj = 4,
         Ia64Imm64 = 5,
         Dir64 = 6,
+        GlobDat64 = 7,
+        GlobDat32 = 7,
     };
 
     struct Relocation {
         memory::address rva;
         std::uint8_t size = 0; // in bytes
         RelocationType type;
+        std::optional<std::size_t> sym_index = std::nullopt;
+        std::optional<std::ptrdiff_t> addend = std::nullopt;
     };
 
-    enum struct DirectoryType {
+    enum struct DirectoryType : std::uint8_t {
         Export = 0,
         Import = 1,
         Resource = 2,
@@ -53,7 +59,7 @@ namespace cont {
         Iat = 13,
         DelayImport = 14,
         ComDescriptor = 15,
-        MAX_LENGTH,
+        MAX_LENGTH = 16,
     };
 
     struct DirectoryProperties {
@@ -62,7 +68,7 @@ namespace cont {
     };
 
     struct Section {
-        std::string name;
+        std::optional<std::string> name = std::nullopt;
         std::size_t virtual_size = 0U;
         std::size_t virtual_address = 0U;
         std::size_t size_raw_data = 0U;
@@ -112,7 +118,7 @@ namespace cont {
 
     class ImageBase {
     public:
-        explicit ImageBase(const memory::address raw_image): raw_image_(raw_image) { }
+        explicit ImageBase(const ContImageType image_type, const memory::address raw_image): image_type_(image_type), raw_image_(raw_image) { }
         virtual ~ImageBase() = default;
         DEFAULT_COPY(ImageBase);
 
@@ -122,11 +128,22 @@ namespace cont {
         [[nodiscard]] virtual std::size_t get_image_base() const = 0;
         [[nodiscard]] virtual std::size_t get_section_alignment() const = 0;
         [[nodiscard]] virtual std::size_t get_file_alignment() const = 0;
-        [[nodiscard]] virtual std::size_t get_base_of_code() const = 0;
 
         [[nodiscard]] virtual std::vector<std::uint8_t> rebuild_image() = 0;
 
-        virtual void realign_sections() = 0;
+        void realign_sections() {
+            /// Nothing to realign
+            if (sections.size() <= 1) {
+                return;
+            }
+
+            /// Making sure that all section virtual sizes are aligned
+            for (std::size_t i = 0; i < sections.size() - 1; ++i) {
+                auto& sec = sections.at(i);
+                const auto& next_sec = sections.at(i + 1);
+                sec.virtual_size = next_sec.virtual_address - sec.virtual_address;
+            }
+        }
 
         [[nodiscard]] Section& new_section(Section object) {
             const auto section_alignment = get_section_alignment();
@@ -231,6 +248,10 @@ namespace cont {
             return raw_image_;
         }
 
+        [[nodiscard]] ContImageType image_type() const noexcept {
+            return image_type_;
+        }
+
     protected:
         virtual void update_sections() = 0;
         virtual void update_relocations() = 0;
@@ -241,6 +262,7 @@ namespace cont {
         }
 
         memory::address raw_image_;
+        ContImageType image_type_;
 
     public:
         /// An unordered map that consists of {rva: reloc_info}
@@ -335,6 +357,68 @@ constexpr cont::Section to_cont(const win::section_header_t section) {
     result.characteristics.mem_read = section.characteristics.mem_read;
     result.characteristics.mem_write = section.characteristics.mem_write;
     return result;
+}
+
+template <typename Phdr>
+    requires(traits::is_any_of_v<Phdr, Elf64_Phdr, Elf32_Phdr>)
+[[nodiscard]] cont::Section to_cont(const Phdr& phdr) {
+    cont::Section s{};
+    s.name = std::nullopt;
+    s.virtual_size = static_cast<std::size_t>(phdr.p_memsz);
+    s.virtual_address = static_cast<std::size_t>(phdr.p_vaddr);
+    s.size_raw_data = static_cast<std::size_t>(phdr.p_filesz);
+    s.ptr_raw_data = static_cast<std::size_t>(phdr.p_offset);
+    s.characteristics.mem_execute = !!(phdr.p_flags & PF_X);
+    s.characteristics.mem_write = !!(phdr.p_flags & PF_W);
+    s.characteristics.mem_read = !!(phdr.p_flags & PF_R);
+    return s;
+}
+
+template <typename Shdr>
+    requires(traits::is_any_of_v<Shdr, Elf64_Shdr, Elf32_Shdr>)
+[[nodiscard]] cont::Section to_cont(const Shdr& shdr, const std::string_view name) {
+    cont::Section s{};
+    s.name = std::string{name};
+    s.virtual_size = static_cast<std::size_t>(shdr.sh_size);
+    s.virtual_address = static_cast<std::size_t>(shdr.sh_addr);
+    s.size_raw_data = shdr.sh_type == SHT_NOBITS ? 0U : static_cast<std::size_t>(shdr.sh_size);
+    s.ptr_raw_data = static_cast<std::size_t>(shdr.sh_offset);
+    s.characteristics.mem_execute = !!(shdr.sh_flags & SHF_EXECINSTR);
+    s.characteristics.mem_write = !!(shdr.sh_flags & SHF_WRITE);
+    s.characteristics.mem_read = !!(shdr.sh_flags & SHF_ALLOC);
+    return s;
+}
+
+[[nodiscard]] constexpr cont::RelocationType to_cont(const std::uint64_t elf_type, const cont::ImageMode mode) {
+    switch (mode) {
+    case cont::ImageMode::X64: {
+        switch (elf_type) {
+        case R_X86_64_64:
+        case R_X86_64_RELATIVE:
+            return cont::RelocationType::Dir64;
+        case R_X86_64_32:
+        case R_X86_64_32S:
+            return cont::RelocationType::HighLow;
+        case R_X86_64_GLOB_DAT:
+            return cont::RelocationType::GlobDat64;
+        default:
+            throw std::out_of_range("cont::to_cont: Unsupported relocation type for x64 mode");
+        }
+    }
+    case cont::ImageMode::X86: {
+        switch (elf_type) {
+        case R_386_32:
+        case R_386_RELATIVE:
+            return cont::RelocationType::HighLow;
+        case R_386_GLOB_DAT:
+            return cont::RelocationType::GlobDat32;
+        default:
+            throw std::out_of_range("cont::to_cont: Unsupported relocation type for x86 mode");
+        }
+    }
+    default:
+        throw std::out_of_range("cont::to_cont: Unsupported image mode");
+    }
 }
 
 constexpr win::reloc_type_id to_win(const cont::RelocationType type) {

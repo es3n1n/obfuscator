@@ -22,7 +22,7 @@ namespace func_parser::map {
         //
         const auto map_content = files::read_file(map_path);
         if (!map_content.has_value() || map_content->empty()) {
-            throw std::runtime_error("Empty map file");
+            return {};
         }
 
         // Converting to string stream

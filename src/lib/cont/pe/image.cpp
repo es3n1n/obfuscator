@@ -1,6 +1,3 @@
-//
-// Created by es3n1n on 2025-08-06.
-//
 #include "cont/pe/image.hpp"
 
 #include "cont/pe/rebuilder/rebuilder.hpp"
@@ -77,21 +74,6 @@ namespace cont::pe {
     [[nodiscard]] std::vector<std::uint8_t> Image::rebuild_image() {
         auto ctx = RebuilderContext{.image = this};
         return rebuild_pe(ctx);
-    }
-
-    void Image::realign_sections() {
-        /// Nothing to realign
-        if (sections.size() <= 1) {
-            return;
-        }
-
-        /// Making sure that all section virtual sizes are aligned
-        for (std::size_t i = 0; i < sections.size() - 1; ++i) {
-            auto& sec = sections.at(i);
-            const auto& next_sec = sections.at(i + 1);
-
-            sec.virtual_size = next_sec.virtual_address - sec.virtual_address;
-        }
     }
 
     void Image::update_sections() {

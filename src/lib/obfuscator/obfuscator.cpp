@@ -21,7 +21,7 @@ namespace obfuscator {
 
         // Initializing instances
         //
-        func_parser_.setup(*image_, config_.func_parser_config(), config_.obfuscator_config());
+        func_parser_.setup(*image_, config_.func_parser_config(), config_.obfuscator_config(), config_.function_configurations());
 
         // Running setup tasks
         //
@@ -64,10 +64,17 @@ namespace obfuscator {
         }
 
         /// Try to find function info from map/pdb
-        const auto function_info =
-            func_parser_.find_if([&configuration](const func_parser::function_t& func) -> bool { return func.name == configuration.function_name; });
+        const auto function_info = func_parser_.find_if([&configuration](const func_parser::function_t& func) -> bool {
+            if (configuration.rva.has_value() && func.rva == *configuration.rva) {
+                return true;
+            }
+            if (configuration.function_name.has_value() && func.name == *configuration.function_name) {
+                return true;
+            }
+            return false;
+        });
         if (!function_info.has_value()) {
-            throw std::runtime_error(std::format("collect: function {} not found", configuration.function_name));
+            throw std::runtime_error(std::format("collect: function {} not found", configuration.name()));
         }
 
         /// Schedule transforms

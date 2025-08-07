@@ -7,7 +7,7 @@ namespace cont::pe::detail {
         win::section_header_t assemble_section_header(const Section& section) {
             win::section_header_t result{};
 
-            std::ranges::copy(section.name, reinterpret_cast<char*>(result.name.short_name));
+            std::ranges::copy(section.name.value(), reinterpret_cast<char*>(result.name.short_name));
             result.virtual_size = static_cast<std::uint32_t>(section.virtual_size);
             result.virtual_address = static_cast<std::uint32_t>(section.virtual_address);
             result.size_raw_data = static_cast<std::uint32_t>(section.size_raw_data);

@@ -11,6 +11,7 @@ namespace cli {
             {{"-pdb", "[path]", ""}, "Set custom .pdb file location"},
             {{"-map", "[path]", ""}, "Set custom .map file location"},
             {{"-f", "[name]", ""}, "Start new function configuration"},
+            {{"-r", "[rva]", ""}, "Start new function configuration with RVA"},
             {{"-t", "[name]", ""}, "Start new transform configuration"},
             {{"-g", "[name]", ""}, "Start new transform global configuration"},
             {{"-v", "[name]", "[value]"}, "Push value"},

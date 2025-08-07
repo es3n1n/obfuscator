@@ -10,3 +10,7 @@
 condition = "build-tests"
 git = "https://github.com/es3n1n/obfuscator-resources.git"
 tag = "0991d8717700c91dd97deb00b007a064bc3d880a"
+
+[target.elf]
+type = "interface"
+include-directories = ["elf/include/"]

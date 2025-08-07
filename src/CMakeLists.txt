@@ -30,6 +30,11 @@ set(obfuscator-lib_SOURCES
 	"lib/analysis/bb_decomp/jumptables.cpp"
 	"lib/analysis/passes/misc/bb_insn_passes.cpp"
 	"lib/config_parser/config_parser.cpp"
+	"lib/cont/elf/elf_image.cpp"
+	"lib/cont/elf/rebuilder/detail/elf_build_sht.cpp"
+	"lib/cont/elf/rebuilder/detail/elf_copy_sections.cpp"
+	"lib/cont/elf/rebuilder/detail/elf_init_header.cpp"
+	"lib/cont/elf/rebuilder/detail/elf_write_relocations.cpp"
 	"lib/cont/pe/image.cpp"
 	"lib/cont/pe/rebuilder/detail/copy_sections.cpp"
 	"lib/cont/pe/rebuilder/detail/erase_metadata.cpp"
@@ -71,6 +76,8 @@ set(obfuscator-lib_SOURCES
 	"lib/config_parser/structs.hpp"
 	"lib/cont/base.hpp"
 	"lib/cont/cont.hpp"
+	"lib/cont/elf/image.hpp"
+	"lib/cont/elf/rebuilder/rebuilder.hpp"
 	"lib/cont/pe/image.hpp"
 	"lib/cont/pe/rebuilder/rebuilder.hpp"
 	"lib/easm/assembler/assembler.hpp"
@@ -129,6 +136,7 @@ target_link_libraries(obfuscator-lib PUBLIC
 	obfuscator-project
 	zasm
 	linux-pe
+	elf
 	magic_enum
 	LLVMDemangle
 	es3n1n::common
@@ -157,6 +165,8 @@ set(obfuscator_SOURCES
 	"lib/config_parser/structs.hpp"
 	"lib/cont/base.hpp"
 	"lib/cont/cont.hpp"
+	"lib/cont/elf/image.hpp"
+	"lib/cont/elf/rebuilder/rebuilder.hpp"
 	"lib/cont/pe/image.hpp"
 	"lib/cont/pe/rebuilder/rebuilder.hpp"
 	"lib/easm/assembler/assembler.hpp"
@@ -247,6 +257,8 @@ if(OBFUSCATOR_BUILD_TESTS) # build-tests
 		"lib/config_parser/structs.hpp"
 		"lib/cont/base.hpp"
 		"lib/cont/cont.hpp"
+		"lib/cont/elf/image.hpp"
+		"lib/cont/elf/rebuilder/rebuilder.hpp"
 		"lib/cont/pe/image.hpp"
 		"lib/cont/pe/rebuilder/rebuilder.hpp"
 		"lib/easm/assembler/assembler.hpp"

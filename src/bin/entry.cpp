@@ -23,6 +23,10 @@ namespace {
             image = std::make_unique<cont::pe::Image>(file->data());
             logger::info("main: PE image loaded");
             break;
+        case cont::ContImageType::ELF:
+            image = std::make_unique<cont::elf::Image>(file->data());
+            logger::info("main: ELF image loaded");
+            break;
         default:
             throw std::runtime_error("Got unsupported image type");
         }

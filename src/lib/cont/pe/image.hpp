@@ -1,7 +1,3 @@
-//
-// Created by es3n1n on 2025-08-06.
-//
-
 #pragma once
 #include <cont/base.hpp>
 #include <linuxpe>
@@ -9,7 +5,7 @@
 namespace cont::pe {
     class Image final : public ImageBase {
     public:
-        explicit Image(const memory::address raw_image): ImageBase(raw_image) {
+        explicit Image(const memory::address raw_image): ImageBase(ContImageType::PE, raw_image) {
             initialize();
         }
         [[nodiscard]] ImageMode mode() const override;
@@ -18,10 +14,9 @@ namespace cont::pe {
         [[nodiscard]] std::size_t get_image_base() const override;
         [[nodiscard]] std::size_t get_section_alignment() const override;
         [[nodiscard]] std::size_t get_file_alignment() const override;
-        [[nodiscard]] std::size_t get_base_of_code() const override;
+        [[nodiscard]] std::size_t get_base_of_code() const;
 
         [[nodiscard]] std::vector<std::uint8_t> rebuild_image() override;
-        void realign_sections() override;
 
         void update_sections() override;
         void update_relocations() override;

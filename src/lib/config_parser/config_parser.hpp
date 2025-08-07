@@ -30,6 +30,10 @@ namespace config_parser {
             return global_transform_configurations_;
         }
 
+        [[nodiscard]] std::vector<function_configuration_t> function_configurations() {
+            return function_configurations_;
+        }
+
         [[nodiscard]] auto begin() {
             return function_configurations_.begin();
         }

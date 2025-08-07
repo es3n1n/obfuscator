@@ -1,4 +1,6 @@
 #include "func_parser/parser.hpp"
+
+#include "cont/pe/image.hpp"
 #include "func_parser/common/combiner.hpp"
 #include "func_parser/map/map.hpp"
 #include "func_parser/pdb/pdb.hpp"
@@ -28,10 +30,15 @@ namespace func_parser {
     }
 
     void Instance::parse() {
-        parse_pdb();
+        if (image_->image_type() == cont::ContImageType::PE) {
+            parse_pdb();
+        }
         progress_step();
 
         parse_map();
+        progress_step();
+
+        parse_manual();
         progress_step();
     }
 
@@ -44,7 +51,7 @@ namespace func_parser {
 
         // Obtaining base of code
         //
-        const auto base_of_code = image_->get_base_of_code();
+        const auto base_of_code = reinterpret_cast<cont::pe::Image*>(image_)->get_base_of_code();
 
         // Trying to parse from a custom pdb path first
         //
@@ -87,5 +94,22 @@ namespace func_parser {
         auto map_path = obfuscator_config_.binary_path;
         map_path = map_path.replace_extension(".map");
         push(map::discover_functions(map_path, image_->sections));
+    }
+
+    void Instance::parse_manual() {
+        std::vector<function_t> functions = {};
+
+        for (auto& func : function_configurations_) {
+            if (!func.rva.has_value()) {
+                continue;
+            }
+
+            auto& new_func = functions.emplace_back();
+            new_func.rva = func.rva.value();
+            new_func.name = func.name();
+            new_func.valid = true;
+        }
+
+        push(functions);
     }
 } // namespace func_parser

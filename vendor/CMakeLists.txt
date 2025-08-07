@@ -92,3 +92,10 @@ else()
 endif()
 add_subdirectory(unicorn)
 set(CMAKE_FOLDER ${CMKR_CMAKE_FOLDER})
+
+# Target: elf
+add_library(elf INTERFACE)
+
+target_include_directories(elf INTERFACE
+	"elf/include/"
+)
