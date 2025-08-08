@@ -8,7 +8,7 @@ namespace easm {
         for (auto* node = program.getHead(); node != nullptr; node = node->getNext()) {
             // Handling `zasm::Data`
             //
-            if (const auto* node_data = node->getIf<zasm::Data>(); node_data != nullptr) {
+            if (const auto* node_data = node->getIf<zasm::Data>(); !errors_only && node_data != nullptr) {
                 logger::info("Data: {:#x}", node_data->valueAsU64());
                 continue;
             }

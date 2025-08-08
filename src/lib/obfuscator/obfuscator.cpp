@@ -100,19 +100,18 @@ namespace obfuscator {
 
         /// Iterate over the named functions and obfuscate them
         for (const auto& func : functions_) {
-            auto obf_func = obfuscator::Function(func.analysed);
-            obfuscate(func.configuration.transform_configurations, obf_func, func.configuration.function_name);
+            auto obf_func = Function(func.analysed);
+            obfuscate(func.configuration.transform_configurations, obf_func, func.configuration.name());
         }
 
         /// Iterate over the nameless functions and obfuscate them
         for (const auto& func : nameless_functions_) {
-            auto obf_func = obfuscator::Function(func.analysed);
-            obfuscate(func.configuration.transform_configurations, obf_func);
+            auto obf_func = Function(func.analysed);
+            obfuscate(func.configuration.transform_configurations, obf_func, "nameless");
         }
     }
 
-    void Instance::obfuscate(const config_parser::transform_configurations_t& configurations, Function& function,
-                             const std::optional<std::string>& function_name) const {
+    void Instance::obfuscate(const config_parser::transform_configurations_t& configurations, Function& function, const std::string& function_name) const {
         auto& scheduler = TransformScheduler::get().container;
 
         /// Export tags that this function would need
@@ -124,7 +123,7 @@ namespace obfuscator {
         auto transforms = scheduler.select_transforms(tags);
 
         /// Init the progress bar
-        auto progress = progress::Progress(std::format("obfuscator: obfuscating {}", function_name.value_or("<nameless>")), transforms.size());
+        auto progress = progress::Progress(std::format("obfuscator: obfuscating {}", function_name), transforms.size());
 
         /// An util that would check the chances and all this other crap, that would be
         /// needed for like  every possible function/transform

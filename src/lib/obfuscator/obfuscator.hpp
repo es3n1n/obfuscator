@@ -51,8 +51,7 @@ namespace obfuscator {
 
     private:
         static void schedule_transforms(const config_parser::transform_configurations_t& configurations);
-        void obfuscate(const config_parser::transform_configurations_t& configurations, Function& function,
-                       const std::optional<std::string>& function_name = std::nullopt) const;
+        void obfuscate(const config_parser::transform_configurations_t& configurations, Function& function, const std::string& function_name) const;
 
         /// \fixme @es3n1n: this is wrong
         [[nodiscard]] zasm::MachineMode machine_mode() const {
