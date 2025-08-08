@@ -7,7 +7,7 @@ namespace cont::elf::detail {
         /// We will be rewriting PHT entries, let's alloc a segment for that
         auto pht_sec_hdr = Section{};
         pht_sec_hdr.name = "pht";
-        pht_sec_hdr.size_raw_data = (img_mode == ImageMode::X64 ? sizeof(Elf64_Phdr) : sizeof(Elf32_Phdr)) * image->sections.size();
+        pht_sec_hdr.size_raw_data = (img_mode == ImageMode::X64 ? sizeof(Elf64_Phdr) : sizeof(Elf32_Phdr)) * image->non_symbolic_segments_count();
         pht_sec_hdr.characteristics.mem_read = true;
         pht_sec_hdr.elf_type = PT_LOAD;
         auto& pht_seg = image->new_section(pht_sec_hdr);
@@ -59,11 +59,12 @@ namespace cont::elf::detail {
             const auto& last_sec = image->find_last_section();
             result.resize(last_sec.ptr_raw_data + last_sec.size_raw_data);
 
-            auto* original_ehdr = image->rva_to_ptr<Ehdr>(nullptr);
+            auto* original_ehdr = image->rva_to_ptr<Ehdr>(image->get_image_base());
+            assert(original_ehdr != nullptr);
 
             /// Update PHT file offset
             original_ehdr->e_phoff = static_cast<decltype(Ehdr::e_phoff)>(pht_seg.ptr_raw_data);
-            original_ehdr->e_phnum = static_cast<decltype(Ehdr::e_phnum)>(image->sections.size());
+            original_ehdr->e_phnum = static_cast<decltype(Ehdr::e_phnum)>(image->non_symbolic_segments_count());
         };
 
         /// Updating .dynamic

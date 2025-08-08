@@ -7,6 +7,7 @@
 #include "es3n1n/common/memory/address.hpp"
 #include "util/structs.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <string>
@@ -33,6 +34,7 @@ namespace cont {
         GlobDat64 = 7,
         GlobDat32 = 8,
         JumpSlot = 9,
+        Copy = 10,
     };
 
     enum struct RelocationSource : std::uint8_t {
@@ -228,7 +230,7 @@ namespace cont {
             return *result;
         }
 
-        virtual [[nodiscard]] Section* rva_to_section(std::uint32_t rva) {
+        [[nodiscard]] virtual Section* rva_to_section(std::uint32_t rva) {
             const auto iter = std::ranges::find_if(sections, [rva](const Section& sec) -> bool { //
                 return rva >= sec.virtual_address && rva <= (sec.virtual_address + sec.virtual_size);
             });
@@ -434,8 +436,10 @@ template <typename Shdr>
             return cont::RelocationType::GlobDat64;
         case R_X86_64_JUMP_SLOT:
             return cont::RelocationType::JumpSlot;
+        case R_X86_64_COPY:
+            return cont::RelocationType::Copy;
         default:
-            throw std::out_of_range("cont::to_cont: Unsupported relocation type for x64 mode");
+            throw std::out_of_range(std::format("cont::to_cont: Unsupported relocation type for x64 mode {}", ELF64_R_TYPE(elf_type)));
         }
     }
     case cont::ImageMode::X86: {
@@ -470,6 +474,7 @@ constexpr win::reloc_type_id to_win(const cont::RelocationType type) {
         return win::reloc_type_id::rel_based_ia64_imm64;
     case cont::RelocationType::Dir64:
         return win::reloc_type_id::rel_based_dir64;
+    default:
+        throw std::runtime_error("pe: unsupported relocation type");
     }
-    throw std::runtime_error("pe: unsupported relocation type");
 }

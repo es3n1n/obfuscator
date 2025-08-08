@@ -1,6 +1,7 @@
 #pragma once
 #include <cont/base.hpp>
 #include <linux/elf.h>
+#include <numeric>
 
 namespace cont::elf {
     struct Dynamic {
@@ -24,6 +25,11 @@ namespace cont::elf {
 
         void update_sections() override;
         void update_relocations() override;
+
+        [[nodiscard]] std::size_t non_symbolic_segments_count() const {
+            return std::accumulate(sections.begin(), sections.end(), static_cast<std::size_t>(0),
+                                   [](const auto acc, const Section& sec) -> std::size_t { return acc + (sec.symbolic ? 0 : 1); });
+        }
 
         [[nodiscard]] Section* find_segment_with_type(const std::size_t type) {
             const auto iter = std::ranges::find_if(sections, [type](const Section& sec) -> bool { //

@@ -9,7 +9,7 @@ namespace func_parser {
     class Instance {
     public:
         DEFAULT_CT_CTOR_DTOR(Instance);
-        DEFAULT_COPY(Instance);
+        NON_COPYABLE(Instance);
 
         void setup(cont::ImageBase* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config,
                    const std::vector<config_parser::function_configuration_t> function_configurations) {

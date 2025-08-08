@@ -1,6 +1,8 @@
 #include "cont/elf/rebuilder/rebuilder.hpp"
 #include "util/sections.hpp"
 
+#include <ranges>
+
 namespace cont::elf::detail {
     void update_relocations(Image* image) {
         const auto img_mode = image->mode();
@@ -17,7 +19,7 @@ namespace cont::elf::detail {
                 throw std::runtime_error("cont::elf: DT_RELA or DT_RELASZ not found or invalid");
             }
 
-            const auto ptr = image->rva_to_ptr(rela->value);
+            auto* const ptr = image->rva_to_ptr(rela->value);
             std::memset(ptr, 0, rela_sz->value);
         }
 
@@ -41,8 +43,10 @@ namespace cont::elf::detail {
         const auto assemble_structs = [&sec, &image, &img_mode]<typename Rela>() -> void {
             auto* out_ptr = memory::address(sec.raw_data.data()).ptr<Rela>();
 
-            for (auto& [rva, reloc] : image->relocations) {
-                auto info = reloc.info_raw;
+            /// Separate them by type
+            std::unordered_multimap<std::size_t, Relocation*> relocations;
+            for (auto& reloc : image->relocations | std::views::values) {
+                auto& info = reloc.info_raw;
 
                 if (!info.has_value()) {
                     if (reloc.type == RelocationType::Absolute) {
@@ -51,7 +55,7 @@ namespace cont::elf::detail {
 
                     switch (reloc.type) {
                     case RelocationType::HighLow: {
-                        info = static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE : R_386_RELATIVE);
+                        info.emplace(static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE : R_386_RELATIVE));
                         break;
                     default:
                         throw std::out_of_range("cont::elf::detail::update_relocations: Unsupported relocation type for ELF");
@@ -60,10 +64,31 @@ namespace cont::elf::detail {
                 }
 
                 assert(info.has_value());
+                relocations.emplace(img_mode == ImageMode::X64 ? ELF64_R_TYPE(*info) : ELF32_R_TYPE(*info), &reloc);
+            }
+
+            /// Assemble R_X86_64_RELATIVE first
+            for (auto& [rva, reloc] : relocations | std::views::filter([img_mode](const auto& pair) -> bool {
+                                          return pair.first == (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE);
+                                      })) {
+                assert(reloc->info_raw.has_value());
                 *out_ptr = Rela{
-                    .r_offset = rva.as<decltype(Rela::r_offset)>(),
-                    .r_info = static_cast<decltype(Rela::r_info)>(*info),
-                    .r_addend = static_cast<decltype(Rela::r_addend)>(reloc.addend.value_or(0)),
+                    .r_offset = reloc->rva.template as<decltype(Rela::r_offset)>(),
+                    .r_info = static_cast<decltype(Rela::r_info)>(*reloc->info_raw),
+                    .r_addend = static_cast<decltype(Rela::r_addend)>(reloc->addend.value_or(0)),
+                };
+                ++out_ptr;
+            }
+
+            /// Assemble the rest of relocations
+            for (auto& [rva, reloc] : relocations | std::views::filter([img_mode](const auto& pair) -> bool {
+                                          return pair.first != (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE);
+                                      })) {
+                assert(reloc->info_raw.has_value());
+                *out_ptr = Rela{
+                    .r_offset = reloc->rva.template as<decltype(Rela::r_offset)>(),
+                    .r_info = static_cast<decltype(Rela::r_info)>(*reloc->info_raw),
+                    .r_addend = static_cast<decltype(Rela::r_addend)>(reloc->addend.value_or(0)),
                 };
                 ++out_ptr;
             }
@@ -85,6 +110,6 @@ namespace cont::elf::detail {
         assert(rela != nullptr && rela_sz != nullptr);
         rela->value = sec.virtual_address;
         rela_sz->value = sec_hdr.size_raw_data;
-        logger::debug("elf: updated relocations: {} entries", image->relocations.size());
+        logger::debug("elf: updated relocations: {} entries (now at {:#x})", image->relocations.size(), rela->value);
     }
 } // namespace cont::elf::detail

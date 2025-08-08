@@ -88,7 +88,7 @@ namespace cont::elf {
     }
 
     void Image::update_sections() {
-        auto build_from_segments = [this]<typename ElfEhdr, typename ElfPhdr, typename ElfDyn>(const ElfEhdr* ehdr) -> void {
+        auto build_from_segments = [&]<typename ElfEhdr, typename ElfPhdr, typename ElfDyn>(const ElfEhdr* ehdr) -> void {
             auto phdrs = phdr_span<ElfEhdr, ElfPhdr>(ehdr);
 
             sections.clear();
@@ -97,7 +97,7 @@ namespace cont::elf {
 
                 sec.raw_data.resize(sec.size_raw_data, 0);
                 if (sec.size_raw_data != 0) {
-                    const auto* src = raw_image_.offset(sec.ptr_raw_data).as<const std::uint8_t*>();
+                    const auto* src = raw_image_.offset(sec.ptr_raw_data).template as<const std::uint8_t*>();
                     std::memcpy(sec.raw_data.data(), src, sec.size_raw_data);
                 }
 
@@ -117,13 +117,22 @@ namespace cont::elf {
                     .virtual_size = 0x1000,
                     .virtual_address = plt_got->value,
                     .size_raw_data = 0,
-                    .ptr_raw_data = plt_got->value,
+                    .ptr_raw_data = 0,
                     .symbolic = true,
                     .elf_type = PT_DYNAMIC,
                 });
             }
 
-            std::ranges::sort(sections, {}, &cont::Section::virtual_address);
+            std::ranges::sort(sections, [](const Section& lhs, const Section& rhs) -> bool {
+                /// PHDR should always be first
+                if (lhs.elf_type.value() == PT_PHDR) {
+                    return true;
+                }
+                if (rhs.elf_type.value() == PT_PHDR) {
+                    return false;
+                }
+                return lhs.virtual_address < rhs.virtual_address;
+            });
         };
 
         switch (mode()) {
@@ -154,7 +163,7 @@ namespace cont::elf {
                     throw std::runtime_error("cont::elf: DT_RELA or DT_RELASZ not found or invalid");
                 }
 
-                const auto* rela_ptr = raw_image_.offset(static_cast<std::ptrdiff_t>(rela->value)).as<const Rela*>();
+                const auto* rela_ptr = rva_to_ptr<const Rela>(rela->value);
                 for (const auto* const rela_end = rela_ptr + (rela_sz->value / sizeof(Rela)); rela_ptr < rela_end; ++rela_ptr) {
                     const auto converted_type = to_cont(rela_ptr->r_info, img_mode);
                     relocations[rela_ptr->r_offset] =
