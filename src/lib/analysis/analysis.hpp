@@ -78,7 +78,7 @@ namespace analysis {
 
     inline Function analyse(cont::ImageBase* image, const func_parser::function_t& function) {
         auto result = Function(image, function);
-        logger::debug("analysis: analysed function {}", function);
+        logger::debug("analysis: analysed function {} (range: {:#x}:{:#x})", function, result.range.start, result.range.end);
         if (auto size = result.range.size(); size < easm::kMaxEntryInstructionSize) {
             throw std::runtime_error(std::format("analysis: Minimal function size is {} bytes, got {}", easm::kMaxEntryInstructionSize, size));
         }
