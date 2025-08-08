@@ -25,7 +25,8 @@ namespace easm {
                 const auto& insn_info = node_insn->getDetail(program.getMode());
 
                 if (!insn_info) {
-                    throw std::runtime_error("Unable to estimate program size: unable to get if instr info");
+                    throw std::runtime_error(std::format("Unable to estimate program size: unable to get if instr info {}",
+                                                         ZydisMnemonicGetString(static_cast<ZydisMnemonic>(node_insn->getMnemonic().value()))));
                 }
 
                 result += insn_info->getLength();

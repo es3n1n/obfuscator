@@ -78,14 +78,21 @@ namespace easm {
         }
 
         bool result = false;
-        for (std::size_t i = 0; i < insn.getOperandCount() && !result; ++i) {
-            if (const auto* op_reg = insn.getOperandIf<zasm::Reg>(i); op_reg != nullptr) {
-                result = op_reg->isIP();
-                continue;
-            }
 
-            if (const auto* op_mem = insn.getOperandIf<zasm::Mem>(i); op_mem != nullptr) {
-                result = op_mem->getBase().isIP();
+        if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
+            for (auto& op : detail->getOperands()) {
+                if (result) {
+                    break;
+                }
+
+                if (const auto* op_reg = op.getIf<zasm::Reg>(); op_reg != nullptr) {
+                    result = op_reg->isIP();
+                    continue;
+                }
+
+                if (const auto* op_mem = op.getIf<zasm::Mem>(); op_mem != nullptr) {
+                    result = op_mem->getBase().isIP();
+                }
             }
         }
 
@@ -245,6 +252,29 @@ namespace easm {
 
             if (const auto* op_reg = insn.getOperandIf<zasm::Reg>(i); op_reg != nullptr) {
                 result.emplace_back(*op_reg);
+            }
+        }
+
+        return result;
+    }
+
+    inline bool affects_flags(const zasm::Instruction& insn) {
+        bool result = false;
+
+        if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
+            for (auto& op : detail->getOperands()) {
+                if (result) {
+                    break;
+                }
+
+                if (const auto* op_reg = op.getIf<zasm::Reg>(); op_reg != nullptr) {
+                    result = op_reg->getClass() == static_cast<zasm::Reg::Class>(ZYDIS_REGCLASS_FLAGS);
+                    continue;
+                }
+
+                if (const auto* op_mem = op.getIf<zasm::Mem>(); op_mem != nullptr) {
+                    result = op_mem->getBase().getClass() == static_cast<zasm::Reg::Class>(ZYDIS_REGCLASS_FLAGS);
+                }
             }
         }
 

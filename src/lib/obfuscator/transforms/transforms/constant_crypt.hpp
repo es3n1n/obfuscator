@@ -21,8 +21,8 @@ namespace obfuscator::transforms {
                 return;
             }
 
-            /// Don't really feel like messing around with something that affects IP
-            if (easm::affects_ip(*insn->ref)) {
+            /// Don't really feel like messing around with something that affects IP/flags
+            if (easm::affects_ip(*insn->ref) || easm::affects_flags(*insn->ref)) {
                 return;
             }
 
@@ -31,10 +31,10 @@ namespace obfuscator::transforms {
             if (!imm_op_index.has_value()) {
                 return;
             }
-            const auto* imm_op = insn->ref->getOperandIf<zasm::Imm>(imm_op_index.value());
+            const auto imm_op = insn->ref->getOperand<zasm::Imm>(imm_op_index.value());
 
             /// Get its value, bitsize
-            const auto imm_value = imm_op->value<std::uint64_t>();
+            const auto imm_value = imm_op.value<std::uint64_t>();
             const auto imm_bitsize = easm::get_operand_size(function->machine_mode, insn->ref, 0);
 
             if (imm_bitsize == zasm::toBitSize(8)) {
@@ -106,14 +106,19 @@ namespace obfuscator::transforms {
                 easm::assert_operand_used_reg(function->machine_mode, insn->ref, 0, var_1);
             }
 
+            /// Swap the operand
+            insn->ref->setOperand(*imm_op_index, var_1);
+            if (const auto res = insn->ref->getDetail(function->machine_mode); !res.hasValue()) {
+                logger::warn("constant_crypt: unable to swap to new register");
+                insn->ref->setOperand(*imm_op_index, imm_op);
+                return;
+            }
+
             /// Update stack offset, if needed, because we're gonna change its layout with our pushes
             if (sp_mem.has_value()) {
                 (*sp_mem)->setDisplacement((*sp_mem)->getDisplacement() + var_alloc.stack_size());
                 logger::debug("constant_crypt: updated sp displacement at {:#x}", *insn->rva);
             }
-
-            /// Swap the operand
-            insn->ref->setOperand(*imm_op_index, var_1);
 
             /// Allocate vars on stack
             as = *function->cursor->after(push_at);

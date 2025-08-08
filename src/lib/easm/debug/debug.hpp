@@ -2,7 +2,7 @@
 #include "analysis/common/debug.hpp"
 
 namespace easm {
-    inline void dump_program(const zasm::Program& program) {
+    inline void dump_program(const zasm::Program& program, const bool errors_only = true) {
         /// Iterating over the program nodes
         ///
         for (auto* node = program.getHead(); node != nullptr; node = node->getNext()) {
@@ -17,11 +17,18 @@ namespace easm {
             // Handling `zasm::Instruction`
             //
             if (auto* node_insn = node->getIf<zasm::Instruction>(); node_insn != nullptr) {
+                bool is_error = false;
                 if (const auto& insn_info = node_insn->getDetail(program.getMode()); !insn_info) {
-                    throw std::runtime_error("Unable to debug dump program: unable to get if instr info");
+                    is_error = true;
+                    logger::error<1>("unable to get instn info -- this is broken");
+                }
+
+                if (!is_error && errors_only) {
+                    continue;
                 }
 
                 logger::info("Instruction: {}", ZydisMnemonicGetString(static_cast<ZydisMnemonic>(node_insn->getMnemonic().value())));
+
                 if (const auto ops_count = node_insn->getOperandCount(); ops_count > 0) {
                     logger::info<1>("Operands:");
 
@@ -42,13 +49,11 @@ namespace easm {
 
                         if (const auto* p_mem = node_insn->getOperandIf<zasm::Mem>(i); p_mem) {
                             const auto reg = static_cast<ZydisRegister_>(p_mem->getBase().getId());
+                            logger::info<3>("expr: [{} + {:#x}]", reg == 0 ? "none" : ZydisRegisterGetString(reg), p_mem->getDisplacement());
+                        }
 
-                            std::string reg_str = reg == 0 ? "none" : std::to_string(reg);
-                            if (p_mem->getBase().isIP()) {
-                                reg_str = "ip";
-                            }
-
-                            logger::info<3>("expr: [{} + {:#x}]", reg_str, p_mem->getDisplacement());
+                        if (const auto* p_reg = node_insn->getOperandIf<zasm::Reg>(i); p_reg) {
+                            logger::info<3>("name: {}", ZydisRegisterGetString(static_cast<ZydisRegister>(p_reg->getId())));
                         }
                     }
                 }

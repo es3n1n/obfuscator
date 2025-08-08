@@ -31,7 +31,13 @@ namespace cont {
         Ia64Imm64 = 5,
         Dir64 = 6,
         GlobDat64 = 7,
-        GlobDat32 = 7,
+        GlobDat32 = 8,
+        JumpSlot = 9,
+    };
+
+    enum struct RelocationSource : std::uint8_t {
+        REL = 0,
+        RELA = 1,
     };
 
     struct Relocation {
@@ -40,6 +46,8 @@ namespace cont {
         RelocationType type;
         std::optional<std::size_t> sym_index = std::nullopt;
         std::optional<std::ptrdiff_t> addend = std::nullopt;
+        std::optional<std::ptrdiff_t> info_raw = std::nullopt;
+        std::optional<RelocationSource> source = std::nullopt;
     };
 
     enum struct DirectoryType : std::uint8_t {
@@ -75,8 +83,12 @@ namespace cont {
         std::size_t ptr_raw_data = 0U;
 
         std::vector<std::uint8_t> raw_data;
-        std::array<std::optional<DirectoryProperties>, std::to_underlying(DirectoryType::MAX_LENGTH)> contains_directories = {};
 
+        bool symbolic = false; // ignore while linking
+        std::optional<std::size_t> elf_alignment = std::nullopt;
+        std::optional<std::size_t> elf_type = std::nullopt;
+
+        std::array<std::optional<DirectoryProperties>, std::to_underlying(DirectoryType::MAX_LENGTH)> contains_directories = {};
         union Characteristics {
             uint32_t flags;
             struct {
@@ -145,26 +157,43 @@ namespace cont {
             }
         }
 
-        [[nodiscard]] Section& new_section(Section object) {
+        void erase_section_if(const std::function<bool(const Section&)>& pred) {
+            if (const auto iter = std::ranges::find_if(sections, pred); iter != sections.end()) {
+                sections.erase(iter);
+            } else {
+                throw std::runtime_error("cont: Unable to erase section by predicate");
+            }
+        }
+
+        [[nodiscard]] Section& new_section(Section& object) {
             const auto section_alignment = get_section_alignment();
             const auto file_alignment = get_file_alignment();
-            const auto last_section = find_last_section();
 
             auto& new_sec = sections.emplace_back(object);
             assert(new_sec.size_raw_data > 0);
-            new_sec.raw_data.resize(new_sec.size_raw_data);
+
+            const auto last_va_section = std::ranges::max_element(sections, [](const Section& sec, const Section& sec2) -> auto { //)
+                return (sec.virtual_address + sec.virtual_size) < (sec2.virtual_address + sec2.virtual_size);
+            });
+            const auto last_raw_section = std::ranges::max_element(sections, [](const Section& sec, const Section& sec2) -> auto { //
+                return (sec.ptr_raw_data + sec.size_raw_data) < (sec2.ptr_raw_data + sec2.size_raw_data);
+            });
+
+            assert(last_va_section != std::end(sections) && last_raw_section != std::end(sections));
 
             new_sec.virtual_size = new_sec.size_raw_data = memory::address{new_sec.size_raw_data} //
                                                                .align_up(section_alignment)
                                                                .as<uint32_t>();
 
-            new_sec.virtual_address = memory::address{last_section.virtual_address + last_section.virtual_size} //
+            new_sec.virtual_address = memory::address{last_va_section->virtual_address + last_va_section->virtual_size} //
                                           .align_up(section_alignment)
                                           .as<uint32_t>();
 
-            new_sec.ptr_raw_data = memory::address{last_section.ptr_raw_data + last_section.size_raw_data} //
+            new_sec.ptr_raw_data = memory::address{last_raw_section->ptr_raw_data + last_raw_section->size_raw_data} //
                                        .align_up(file_alignment)
                                        .as<uint32_t>();
+
+            new_sec.raw_data.resize(new_sec.size_raw_data);
 
             return new_sec;
         }
@@ -199,7 +228,7 @@ namespace cont {
             return *result;
         }
 
-        [[nodiscard]] Section* rva_to_section(std::uint32_t rva) {
+        virtual [[nodiscard]] Section* rva_to_section(std::uint32_t rva) {
             const auto iter = std::ranges::find_if(sections, [rva](const Section& sec) -> bool { //
                 return rva >= sec.virtual_address && rva <= (sec.virtual_address + sec.virtual_size);
             });
@@ -371,6 +400,8 @@ template <typename Phdr>
     s.characteristics.mem_execute = !!(phdr.p_flags & PF_X);
     s.characteristics.mem_write = !!(phdr.p_flags & PF_W);
     s.characteristics.mem_read = !!(phdr.p_flags & PF_R);
+    s.elf_type = phdr.p_type;
+    s.elf_alignment = phdr.p_align;
     return s;
 }
 
@@ -392,7 +423,7 @@ template <typename Shdr>
 [[nodiscard]] constexpr cont::RelocationType to_cont(const std::uint64_t elf_type, const cont::ImageMode mode) {
     switch (mode) {
     case cont::ImageMode::X64: {
-        switch (elf_type) {
+        switch (ELF64_R_TYPE(elf_type)) {
         case R_X86_64_64:
         case R_X86_64_RELATIVE:
             return cont::RelocationType::Dir64;
@@ -401,12 +432,14 @@ template <typename Shdr>
             return cont::RelocationType::HighLow;
         case R_X86_64_GLOB_DAT:
             return cont::RelocationType::GlobDat64;
+        case R_X86_64_JUMP_SLOT:
+            return cont::RelocationType::JumpSlot;
         default:
             throw std::out_of_range("cont::to_cont: Unsupported relocation type for x64 mode");
         }
     }
     case cont::ImageMode::X86: {
-        switch (elf_type) {
+        switch (ELF32_R_TYPE(elf_type)) {
         case R_386_32:
         case R_386_RELATIVE:
             return cont::RelocationType::HighLow;

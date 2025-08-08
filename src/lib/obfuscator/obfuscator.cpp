@@ -226,6 +226,7 @@ namespace obfuscator {
         auto size_estimation_progress = progress::Progress("obfuscator: estimating section size", functions_.size());
         auto sec_header = sections::get(sections::e_section_t::CODE);
         for (auto& func : functions_) {
+            easm::dump_program(*func.analysed.program);
             const auto program_size = easm::estimate_program_size(*func.analysed.program);
             sec_header.size_raw_data += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
             size_estimation_progress.step();

@@ -29,7 +29,7 @@ namespace analysis::bb_decomp {
 
                 /// Now we need find its table ptr, we are gonna do this by iterating back and
                 /// matching the load_index and/or base_move
-                for (std::size_t j = i; std::cmp_not_equal(j, -1); j--) {
+                for (std::size_t j = i; j != static_cast<std::size_t>(-1); j--) {
                     const auto& prev_insn = basic_block->instructions.at(j);
 
                     auto match_load_index = [&]() -> void {
