@@ -208,6 +208,14 @@ namespace cont {
             return *iter;
         }
 
+        [[nodiscard]] Section* find_section_if_ptr(const std::function<bool(const Section&)>& pred) {
+            const auto iter = std::ranges::find_if(sections, pred);
+            if (iter == sections.end()) {
+                return nullptr;
+            }
+            return &*iter;
+        }
+
         [[nodiscard]] std::vector<Section> find_sections_if(const std::function<bool(const Section&)>& pred) const {
             std::vector<Section> result;
             for (const auto& section : sections) {

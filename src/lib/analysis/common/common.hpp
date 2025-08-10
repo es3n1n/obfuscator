@@ -470,8 +470,8 @@ namespace analysis {
             std::reverse(iter, instructions.end());
         }
 
-        [[nodiscard]] std::shared_ptr<insn_t> last_non_jmp_insn(zasm::Program* program = nullptr, const bool destroy_jmps = false,
-                                                                const bool include_conditional_jmps = false) const {
+        [[nodiscard]] std::optional<std::shared_ptr<insn_t>> last_non_jmp_insn(zasm::Program* program = nullptr, const bool destroy_jmps = false,
+                                                                               const bool include_conditional_jmps = false) const {
             auto insns = temp_insns_copy();
             for (auto it = insns.rbegin(); it != insns.rend(); std::advance(it, 1)) {
                 auto insn = *it;
@@ -497,7 +497,7 @@ namespace analysis {
                 return insn;
             }
 
-            throw std::runtime_error(std::format("last_non_jmp_insn: unable to query ({})", static_cast<int>(include_conditional_jmps)));
+            return std::nullopt;
         }
 
         [[nodiscard]] bool contains_label(const zasm::Label::Id label_id) const {

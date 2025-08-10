@@ -14,7 +14,7 @@ if(POLICY CMP0135)
 endif()
 if(OBFUSCATOR_BUILD_TESTS) # build-tests
 	message(STATUS "Fetching resources (0991d8717700c91dd97deb00b007a064bc3d880a)...")
-	FetchContent_Declare(resources
+	FetchContent_Declare(resources SYSTEM
 		GIT_REPOSITORY
 			"https://github.com/es3n1n/obfuscator-resources.git"
 		GIT_TAG

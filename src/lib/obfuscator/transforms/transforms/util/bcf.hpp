@@ -17,9 +17,15 @@ namespace obfuscator::transform_util {
 
         /// Get the last non-jmp insn
         const auto last_insn = bb->last_non_jmp_insn(function->program.get(), true);
+        if (!last_insn.has_value()) {
+            return;
+        }
 
         /// Get the successor
-        const auto successor = last_insn->linear_successor();
+        const auto successor = (*last_insn)->linear_successor();
+        if (successor->instructions.empty()) {
+            return;
+        }
 
         /// Place successor start label
         const auto successor_label = function->program->createLabel();
@@ -36,7 +42,7 @@ namespace obfuscator::transform_util {
         function->observer->stop();
 
         /// Setup dead branch
-        as = *function->cursor->after(last_insn->node_ref);
+        as = *function->cursor->after((*last_insn)->node_ref);
         as->bind(dummy_bb_label);
         const auto label_node = as->getCursor();
 
@@ -51,7 +57,7 @@ namespace obfuscator::transform_util {
         function->observer->start();
 
         /// Set the cursor, generate predicate
-        as = *function->cursor->after(last_insn->node_ref);
+        as = *function->cursor->after((*last_insn)->node_ref);
         predicate_generator(as, successor_label, dummy_bb_label, &var_alloc);
 
         /// Update successors, predecessors

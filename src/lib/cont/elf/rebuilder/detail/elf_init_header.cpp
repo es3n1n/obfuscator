@@ -13,12 +13,14 @@ namespace cont::elf::detail {
         auto& pht_seg = image->new_section(pht_sec_hdr);
 
         /// Update phdr segment
-        auto& old_pht_seg =
-            image->find_section_if([](const Section& section) -> bool { return section.elf_type.has_value() && *section.elf_type == PT_PHDR; });
-        old_pht_seg.ptr_raw_data = pht_seg.ptr_raw_data;
-        old_pht_seg.size_raw_data = pht_seg.size_raw_data;
-        old_pht_seg.virtual_address = pht_seg.virtual_address;
-        old_pht_seg.virtual_size = pht_seg.virtual_size;
+        auto* old_pht_seg =
+            image->find_section_if_ptr([](const Section& section) -> bool { return section.elf_type.has_value() && *section.elf_type == PT_PHDR; });
+        if (old_pht_seg != nullptr) {
+            old_pht_seg->ptr_raw_data = pht_seg.ptr_raw_data;
+            old_pht_seg->size_raw_data = pht_seg.size_raw_data;
+            old_pht_seg->virtual_address = pht_seg.virtual_address;
+            old_pht_seg->virtual_size = pht_seg.virtual_size;
+        }
 
         /// Serializing PHT entries
         const auto serialize_pht = [&image, &pht_seg]<typename ElfPhdr>() -> void {
