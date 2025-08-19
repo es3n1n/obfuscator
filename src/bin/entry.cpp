@@ -53,6 +53,9 @@ int main(const int argc, const char* argv[]) try {
 
     auto config = config_parser::from_argv(argc, argv);
     return startup(config);
+} catch (const std::exception& e) {
+    logger::critical("{}", e.what());
+    return 1;
 } catch (...) {
     logger::critical("Unknown runtime error");
     return 1;
