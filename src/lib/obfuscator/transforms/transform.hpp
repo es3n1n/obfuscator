@@ -49,7 +49,7 @@ namespace obfuscator {
     /// \tparam Img PE Image type, either x64 or x86
     class Transform {
     public:
-        DEFAULT_CT_CTOR(Transform);
+        DEFAULT_CTOR(Transform);
         NON_COPYABLE(Transform);
         virtual ~Transform() = default;
 
