@@ -3,10 +3,10 @@
 #include "obfuscator/transforms/scheduler.hpp"
 #include "obfuscator/transforms/transforms/util/bcf.hpp"
 #include "obfuscator/transforms/transforms/util/opaque_predicates.hpp"
+#include "util/anti_decompilers.hpp"
 
 namespace obfuscator::transforms {
-    template <pe::any_image_t Img>
-    class BogusControlFlow final : public FunctionTransform<Img> {
+    class BogusControlFlow final : public FunctionTransform {
     public:
         enum Var : std::uint8_t {
             MODE = 0,
@@ -30,11 +30,11 @@ namespace obfuscator::transforms {
         /// \brief Transform function
         /// \param ctx Transform context
         /// \param function Routine that it should transform
-        void run_on_function(TransformContext& ctx, Function<Img>* function) override {
-            auto mode = static_cast<Mode>(this->template get_var_value<int>(Var::MODE));
+        void run_on_function(TransformContext& ctx, Function* function) override {
+            auto mode = static_cast<Mode>(this->get_var_value<int>(Var::MODE));
             assert(mode == Mode::OPAQUE_PREDICATES || mode == Mode::RANDOM_PREDICATES);
 
-            auto expr_size = this->template get_var_value<int>(Var::EXPR_SIZE);
+            auto expr_size = this->get_var_value<int>(Var::EXPR_SIZE);
             assert(expr_size > 0);
 
             /// Iterating over the basic blocks
@@ -50,7 +50,7 @@ namespace obfuscator::transforms {
                 }
 
                 /// Generating a BCF stub
-                transform_util::generate_bogus_confrol_flow<Img>(
+                transform_util::generate_bogus_control_flow(
                     function, bb.get(),
                     [&](const analysis::bb_t* new_bb) -> void {
                         /// Tamper data if needed
@@ -63,14 +63,14 @@ namespace obfuscator::transforms {
                         }
                     },
                     [&](zasm::x86::Assembler* assembler, zasm::Label successor_label, zasm::Label dead_branch_label,
-                        analysis::VarAlloc<Img>* var_alloc) -> void {
+                        analysis::VarAlloc* var_alloc) -> void {
                         /// Generate predicate
                         switch (mode) {
                         case Mode::OPAQUE_PREDICATES:
                             transform_util::generate_opaque_predicate(assembler, successor_label, dead_branch_label, var_alloc);
                             break;
                         case Mode::RANDOM_PREDICATES:
-                            gen_random_predicate(assembler, successor_label, dead_branch_label, *var_alloc, expr_size);
+                            gen_random_predicate(function->program.get(), assembler, successor_label, dead_branch_label, *var_alloc, expr_size);
                             break;
                         default:
                             assert(false);
@@ -81,7 +81,7 @@ namespace obfuscator::transforms {
         }
 
     private:
-        static void tamper_instructions(Function<Img>* function, const analysis::bb_t* bb) {
+        static void tamper_instructions(Function* function, const analysis::bb_t* bb) {
             /// Iterating over the copied instructions
             for (const auto& insn : bb->instructions) {
                 /// Skip instructions that affect IP
@@ -114,11 +114,13 @@ namespace obfuscator::transforms {
             }
         }
 
-        static void gen_random_predicate(zasm::x86::Assembler* as, const zasm::Label successor_label, const zasm::Label dead_branch_label,
-                                         analysis::VarAlloc<Img>& var_alloc, const std::size_t expr_size) {
+        static void gen_random_predicate(zasm::Program* program, zasm::x86::Assembler* as, const zasm::Label successor_label,
+                                         const zasm::Label dead_branch_label, analysis::VarAlloc& var_alloc, const std::size_t expr_size) {
             /// Generate the expr, alloc x
             auto expr = mathop::ExpressionGenerator::get().generate(zasm::BitSize::_32, expr_size);
             auto lreg = var_alloc.get_gp32_lo(true);
+
+            auto* const decryption_starts_at = as->getCursor();
 
             /// Push x, lift expr
             var_alloc.push(as);
@@ -131,6 +133,10 @@ namespace obfuscator::transforms {
             /// Two semantically identical branches
             as->jz(dead_branch_label);
             as->jmp(successor_label);
+            auto* const decryption_ends_at = as->getCursor();
+
+            /// Prevent symbolic execution
+            transform_util::anti_symbolic_execution(var_alloc, zasm::BitSize::_32, program, as, decryption_starts_at, decryption_ends_at);
         }
     };
 } // namespace obfuscator::transforms

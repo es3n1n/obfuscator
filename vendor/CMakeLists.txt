@@ -14,7 +14,7 @@ if(POLICY CMP0135)
 endif()
 if(OBFUSCATOR_BUILD_TESTS) # build-tests
 	message(STATUS "Fetching resources (0991d8717700c91dd97deb00b007a064bc3d880a)...")
-	FetchContent_Declare(resources
+	FetchContent_Declare(resources SYSTEM
 		GIT_REPOSITORY
 			"https://github.com/es3n1n/obfuscator-resources.git"
 		GIT_TAG
@@ -82,3 +82,20 @@ else()
 endif()
 add_subdirectory(common)
 set(CMAKE_FOLDER ${CMKR_CMAKE_FOLDER})
+
+# Subdirectory: unicorn
+set(CMKR_CMAKE_FOLDER ${CMAKE_FOLDER})
+if(CMAKE_FOLDER)
+	set(CMAKE_FOLDER "${CMAKE_FOLDER}/unicorn")
+else()
+	set(CMAKE_FOLDER unicorn)
+endif()
+add_subdirectory(unicorn)
+set(CMAKE_FOLDER ${CMKR_CMAKE_FOLDER})
+
+# Target: elf
+add_library(elf INTERFACE)
+
+target_include_directories(elf INTERFACE
+	"elf/include/"
+)

@@ -2,3 +2,4 @@
 28/11/23: Split the bb_decomp logic
 30/11/23: Replace all the manual sucessors/predecessors stuff, we should push them automatically or with a single method
 19/12/23: Add progress-bar to function linking (prob need to ask ZehMatt how to get some sort of serializer callbacks)
+25/02/25: get rid of _t/_e stuff, these should be in PascalCase as well

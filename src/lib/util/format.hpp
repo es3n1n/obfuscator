@@ -9,6 +9,6 @@ namespace format {
     }
 
     inline std::string sec(const sections::e_section_t sec) {
-        return name(sec);
+        return sections::get(sec).name.value();
     }
 } // namespace format

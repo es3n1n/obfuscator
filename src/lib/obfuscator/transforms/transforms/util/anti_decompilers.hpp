@@ -12,9 +12,8 @@ namespace obfuscator::transform_util {
     /// \param assembler zasm Assembler
     /// \param first first node
     /// \param last last node
-    template <pe::any_image_t Img>
-    void anti_symbolic_execution(analysis::VarAlloc<Img>& var_alloc, const zasm::BitSize imm_bit_size, zasm::Program* program,
-                                 zasm::x86::Assembler* assembler, zasm::Node* first, zasm::Node* last) {
+    inline void anti_symbolic_execution(analysis::VarAlloc& var_alloc, const zasm::BitSize imm_bit_size, zasm::Program* program,
+                                        zasm::x86::Assembler* assembler, zasm::Node* first, zasm::Node* last) {
         /// Set cursor at the beginning
         assembler->setCursor(first);
 
@@ -86,7 +85,7 @@ namespace obfuscator::transform_util {
                 /// Pop the encrypted val
                 assembler->pop(xchg_enc_holder->root_gp());
                 /// Push it on stack with xchg operation
-                assembler->xchg(easm::ptr<Img>(easm::sp_for_arch<Img>()), xchg_enc_holder->root_gp());
+                assembler->xchg(easm::ptr(var_alloc.machine_mode(), easm::sp_for_arch(var_alloc.machine_mode())), xchg_enc_holder->root_gp());
                 /// Load to register
                 assembler->pop(xchg_enc_holder->root_gp());
             };

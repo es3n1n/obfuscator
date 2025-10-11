@@ -3,19 +3,19 @@
 #include <es3n1n/common/logger.hpp>
 
 namespace analysis::bb_decomp {
-    template <pe::any_image_t Img>
-    void Instance<Img>::collect() {
+    void Instance::collect() {
         // First of all, we should clear the previous results just in case
         //
         clear();
 
-        // Setup the bb provider
-        //
-        const auto img_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
-
-        // Make successor proxy
-        bb_provider_->set_va_finder([this, img_base](const rva_t virt_addr, const bb_t* callee) {
-            return make_successor(virt_addr - img_base, callee); //
+        // Setup va finder for bb provider
+        /// \note @es3n1n: Base address for nameless stuff will be 0x0
+        std::uintptr_t base_address = 0x0;
+        if (image_.has_value()) {
+            base_address = (*image_)->get_image_base();
+        }
+        bb_provider_->set_va_finder([this, base_address](const rva_t virt_addr, const bb_t* callee) {
+            return make_successor(virt_addr - base_address, callee); //
         });
 
         // Make successor proxy
@@ -72,13 +72,16 @@ namespace analysis::bb_decomp {
         // Starting with the first basic block, and it will process others automatically
         //
         logger::info("bb_decomp: running phase 1");
-        process_bb(function_start_);
+        /// \note @es3n1n: Nameless functions should always start at 0
+        process_bb(function_start_.value_or(0));
 
         // Expand jumptables
         //
         logger::info("bb_decomp: running phase 2");
-        collect_jumptables();
-        collect_jumptable_entries();
+        if (image_.has_value()) {
+            collect_jumptables();
+            collect_jumptable_entries();
+        }
 
         // Splitting basic blocks (pt.1)
         //
@@ -108,13 +111,21 @@ namespace analysis::bb_decomp {
         // dump();
     }
 
-    template <pe::any_image_t Img>
-    std::shared_ptr<bb_t> Instance<Img>::process_bb(const rva_t rva) {
+    std::shared_ptr<bb_t> Instance::process_bb(const rva_t rva) {
         // Initialising stuff
-        // \fixme: @es3n1n: override `get_nt_headers` in `pe::Image` class
-        const std::uint64_t image_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
+        // \fixme: @es3n1n: make a `get_nt_headers` func in `pe::Image` class
+
+        /// \note @es3n1n: We always assume base address as 0 for nameless functions
+        ///     since we use the addresses to access function's data span. Do not change.
+        std::uint64_t image_base = 0;
+        if (image_.has_value()) {
+            image_base = (*image_)->get_image_base();
+        }
         const memory::address virtual_address = rva + image_base;
-        const std::uint8_t* data_start = image_->rva_to_ptr(static_cast<std::uint32_t>(rva.inner()));
+
+        /// Get either the pointer to function within PE, or start of the bytes passed
+        const std::uint8_t* data_start =
+            image_.has_value() ? (*image_)->rva_to_ptr(static_cast<std::uint32_t>(rva.inner())) : (function_code_.value().data() + rva.inner());
 
         // Init basic block info
         //
@@ -159,7 +170,7 @@ namespace analysis::bb_decomp {
 
             // Ignoring anything that wouldn't affect IP
             //
-            if (!insn_desc->is_jump() && !(insn_desc->flags & UNABLE_TO_ESTIMATE_JCC)) {
+            if (!insn_desc->is_jump() && (insn_desc->flags & UNABLE_TO_ESTIMATE_JCC) == 0) {
                 continue;
             }
 
@@ -174,8 +185,7 @@ namespace analysis::bb_decomp {
         return result;
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::update_refs() {
+    void Instance::update_refs() {
         /// Remove stuff that was marked as to be deleted
         sanitize();
 
@@ -189,7 +199,7 @@ namespace analysis::bb_decomp {
             }
         }
 
-        /// Sum stats
+        /// Some stats
         std::size_t weird_nodes = 0;
 
         for (auto* node = program_->getHead(); node != nullptr; node = node->getNext()) {
@@ -204,9 +214,10 @@ namespace analysis::bb_decomp {
                 continue;
             }
 
-            // This is kinda unsafe but whatever..
+            /// Store the node and instruction
             pinsn->node_ref = node;
             pinsn->ref = node->getIf<zasm::Instruction>();
+            assert(pinsn->ref != nullptr);
 
             // This node is up2date, we can remove it as we checked it
             if (insns.contains(pinsn)) {
@@ -230,8 +241,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::split() {
+    void Instance::split() {
         /// \note @es3n1n: Looks kinda scary, but splitting 2k+ basic blocks took me ~350ms so
         /// i guess we'll keep it as it is (PR welcome), perhaps an interval/segment tree could be used here
         logger::debug("analysis: splitting BBs..");
@@ -330,8 +340,7 @@ namespace analysis::bb_decomp {
         } while (split_something);
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::sanitize() {
+    void Instance::sanitize() {
         const auto erased_bbs = std::erase_if(basic_blocks_, [](auto& basic_block) -> bool {
             const auto nodes_erased = std::erase_if(basic_block.second->instructions, [](auto& insn) -> bool {
                 return insn->flags & TO_BE_REMOVED; //
@@ -349,8 +358,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::insert_jmps() {
+    void Instance::insert_jmps() {
         logger::debug("bb_decomp: veryfing BB intersections..");
         /// Lookup for the basic blocks that for some reason aren't jumping to their successor(s)
         for (auto& bb : std::views::values(basic_blocks_)) {
@@ -440,8 +448,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::update_rescheduled_cf() {
+    void Instance::update_rescheduled_cf() {
         logger::debug("bb_decomp: updating rescheduled CF..");
 
         /// Iterating over the all basic blocks
@@ -490,8 +497,7 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::update_tree() {
+    void Instance::update_tree() {
         logger::debug("bb_decomp: updating the BB tree.. (this could take some time)");
 
         /// Since we splitted/merged some basic blocks, there could be some
@@ -571,9 +577,8 @@ namespace analysis::bb_decomp {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::dump() {
-        logger::info("-- Basic blocks for function {:#x}", function_start_);
+    void Instance::dump() {
+        logger::info("-- Basic blocks for function {:#x}", function_start_.value_or(0x0));
 
         for (auto& v : std::views::values(basic_blocks_)) {
             debug::dump_bb(*v);
@@ -582,8 +587,7 @@ namespace analysis::bb_decomp {
         logger::info("-- EOF");
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::dump_to_visualizer() {
+    void Instance::dump_to_visualizer() {
         const auto path = std::filesystem::path(R"(E:\local-projects\obfuscator\scripts\bb_preview\data\)");
         int iter = 0;
 
@@ -592,6 +596,4 @@ namespace analysis::bb_decomp {
             iter += 1;
         }
     }
-
-    PE_DECL_TEMPLATE_CLASSES(Instance);
 } // namespace analysis::bb_decomp

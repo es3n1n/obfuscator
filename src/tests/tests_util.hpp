@@ -5,8 +5,7 @@
 #include <es3n1n/common/random.hpp>
 #include <obfuscator/transforms/scheduler.hpp>
 
-#include <pe/arch/arch.hpp>
-#include <pe/pe.hpp>
+#include <cont/cont.hpp>
 
 #include <gtest/gtest.h>
 
@@ -55,18 +54,5 @@ namespace test {
         // Read the file and return as a result
         //
         return files::read_file(path.wstring()).value();
-    }
-
-    /// \todo @es3n1n: std::invoke_result
-    template <typename Callable>
-    [[nodiscard]] auto with_image(const std::span<std::uint8_t> binary, Callable&& callable) {
-        auto* const x64 = reinterpret_cast<win::image_x64_t*>(binary.data());
-        auto* const x86 = reinterpret_cast<win::image_x86_t*>(binary.data());
-
-        if (pe::arch::is_x64(x64)) {
-            return callable(pe::Image(x64));
-        }
-
-        return callable(pe::Image(x86));
     }
 } // namespace test

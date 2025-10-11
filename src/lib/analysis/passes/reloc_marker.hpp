@@ -1,14 +1,14 @@
 #pragma once
 #include "analysis/analysis.hpp"
+#include "analysis/common/pass_context.hpp"
 #include "util/structs.hpp"
 
 namespace analysis::passes {
-    template <pe::any_image_t Img>
     struct reloc_marker_t {
         DEFAULT_CT_CTOR_DTOR(reloc_marker_t);
         NON_COPYABLE(reloc_marker_t);
 
-        static bool apply_insn(Function<Img>* function [[maybe_unused]], insn_t& instruction, Img* image) {
+        static bool apply_insn(PassContext& ctx, insn_t& instruction) {
             // Would be set to true if instruction contains imm/ip operands
             //
             const zasm::Imm* imm = instruction.find_operand_if<zasm::Imm>();
@@ -20,9 +20,13 @@ namespace analysis::passes {
                 return false;
             }
 
-            /// Obtain needed stuff from pe
-            const auto image_base = image->raw_image->get_nt_headers()->optional_header.image_base;
-            const auto ptr_size = image->get_ptr_size();
+            /// \fixme @es3n1n: we always assume base at 0x0 for nameless functions
+            std::uintptr_t image_base = 0;
+            if (ctx.image.has_value()) {
+                image_base = (*ctx.image)->get_image_base();
+            }
+            /// \fixme @es3n1n: move to util
+            const auto ptr_size = ctx.image_mode == cont::ImageMode::X64 ? sizeof(std::uint64_t) : sizeof(std::uint32_t);
 
             // Force reloc mem
             if (mem != nullptr && mem->getBase().isIP()) {
@@ -41,9 +45,15 @@ namespace analysis::passes {
                 return true;
             }
 
-            // At this point, we are 100% sure that imm is set to something, so we can ignore the `imm != 0` check.
+            // For nameless functions there is no image,
+            //  we should omit header checks as we don't have any header-relocations to proceed with.
+            if (!ctx.image.has_value()) {
+                return false;
+            }
+            auto* image = *ctx.image;
+
+            // At this point, we are 100% sure that imm is set to something.
             // If there's an imm with the size of uintptr_t, we should check maybe it's present in the .reloc dir
-            //
             if (imm != nullptr && getBitSize(imm->getBitSize()) == (ptr_size * CHAR_BIT) && instruction.length >= ptr_size) {
                 // Trying to find relocation from PE header within the instruction
                 // \todo @es3n1n: check segments instead of just bruteforcing

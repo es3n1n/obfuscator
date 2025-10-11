@@ -1,6 +1,6 @@
 #pragma once
+#include "cont/base.hpp"
 #include "easm/easm.hpp"
-#include "pe/pe.hpp"
 #include <es3n1n/common/random.hpp>
 
 #include <list>
@@ -146,23 +146,21 @@ namespace analysis {
 
     /// \brief An lru cache for all types of GP registers
     /// \tparam Img X64 or X86 image, depending on this image, the gp64 lru cache could be available
-    template <pe::any_image_t Img>
     class LRUReg {
-        constexpr static bool IsX64 = pe::is_x64_v<Img>;
         using RegTy = zasm::x86::Gp;
 
     public:
         DEFAULT_DTOR(LRUReg);
         DEFAULT_COPY(LRUReg);
 
-        LRUReg() {
+        explicit LRUReg(const cont::ImageMode image_mode): image_mode_(image_mode) {
             /// Push X86 registers
             for (const auto reg_id : detail::kRegistersX86) {
                 push(reg_id);
             }
 
             /// Push x64 registers if needed
-            if constexpr (IsX64) {
+            if (image_mode_ == cont::ImageMode::X64) {
                 for (const auto reg_id : detail::kRegistersX64) {
                     push(reg_id);
                 }
@@ -227,7 +225,7 @@ namespace analysis {
         /// \param random should we choose a random register across least recently used registers?
         /// \return Register
         [[nodiscard]] RegTy get_gp64(const bool random = false) {
-            assert(IsX64); // no gp64 registers on x86
+            assert(image_mode_ == cont::ImageMode::X64); // no gp64 registers on x86
             return RegTy{to_gp64_if_needed(storage_.get(random))};
         }
 
@@ -260,14 +258,15 @@ namespace analysis {
 
         /// \brief Get machine mode based on the image tparam type
         /// \return machine_mode
-        [[nodiscard]] static zasm::MachineMode machine_mode() noexcept {
-            return IsX64 ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386;
+        [[nodiscard]] zasm::MachineMode machine_mode() const noexcept {
+            /// \todo @es3n1n: get this from the image
+            return image_mode_ == cont::ImageMode::X64 ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386;
         }
 
         /// \brief Converts any gp register to its base register, gp64 for x64 and gp32 for x86
         /// \param reg_id register that it should convert
         /// \return Converted register id
-        [[nodiscard]] static RegID to_gp_ptr(const RegID reg_id) noexcept {
+        [[nodiscard]] RegID to_gp_ptr(const RegID reg_id) const noexcept {
             const auto reg = zasm::Reg{reg_id};
             return reg.getRoot(machine_mode()).getId();
         }
@@ -275,13 +274,15 @@ namespace analysis {
         /// \brief Convert to GP64, if needed
         /// \param reg_id register that it should convert
         /// \return Converted GP64 reg id
-        [[nodiscard]] static RegID to_gp64_if_needed(const RegID reg_id) noexcept {
+        [[nodiscard]] RegID to_gp64_if_needed(const RegID reg_id) const noexcept {
             const auto gp_ptr = to_gp_ptr(reg_id);
-            return IsX64 ? gp_ptr : easm::reg_convert::gp32_to_gp64(gp_ptr);
+            return image_mode_ == cont::ImageMode::X64 ? gp_ptr : easm::reg_convert::gp32_to_gp64(gp_ptr);
         }
 
     private:
         /// \brief gp uptr lru container
         LRURegContainer storage_;
+        /// \brief image mode
+        cont::ImageMode image_mode_;
     };
 } // namespace analysis

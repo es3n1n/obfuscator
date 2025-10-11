@@ -92,6 +92,14 @@ namespace config_parser {
                 continue;
             }
 
+            /// Function RVA
+            if (arg_ == "-r" && next_arg_.has_value()) {
+                state.current_function = &result.create_function_config();
+                state.current_function->rva = string_parser::parse_int64(next_arg_.value());
+                skip(1);
+                continue;
+            }
+
             /// Transform configuration start
             if (arg_ == "-t" && next_arg_.has_value() && state.busy()) {
                 state.current_transform = &state.current_function->transform_configurations.emplace_back();
@@ -115,21 +123,12 @@ namespace config_parser {
             }
 
             if (arg_ == "-seed" && next_arg_.has_value()) {
-                /// \todo @sovissa:
-                /// [1] add correct processing of literals to string_parser
-                /// [2] add support for negative values to arg parser
-                std::size_t seed_value_base = 10;
-
                 std::string_view next_arg_view{next_arg_.value()};
                 if (next_arg_view.starts_with('-')) {
                     next_arg_view = next_arg_view.substr(1);
                 }
-                if (next_arg_view.length() >= 2 && //
-                    (next_arg_view.starts_with("0x") || next_arg_view.starts_with("0X"))) {
-                    seed_value_base = 16;
-                }
 
-                seed = string_parser::parse_uint64(next_arg_.value(), seed_value_base);
+                seed = string_parser::parse_uint64(next_arg_view);
                 skip(1);
                 continue;
             }

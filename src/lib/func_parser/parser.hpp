@@ -6,17 +6,18 @@
 #include <es3n1n/common/progress.hpp>
 
 namespace func_parser {
-    template <pe::any_image_t Img>
     class Instance {
     public:
         DEFAULT_CT_CTOR_DTOR(Instance);
-        DEFAULT_COPY(Instance);
+        NON_COPYABLE(Instance);
 
-        void setup(Img* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config) {
+        void setup(cont::ImageBase* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config,
+                   const std::vector<config_parser::function_configuration_t>& function_configurations) {
             image_ = image;
             config_ = config;
             obfuscator_config_ = obfuscator_config;
-            progress_.emplace("func_parser: discovering functions", 4);
+            function_configurations_ = function_configurations;
+            progress_.emplace("func_parser: discovering functions", 5);
         }
 
         void collect_functions();
@@ -34,6 +35,7 @@ namespace func_parser {
         void parse();
         void parse_pdb();
         void parse_map();
+        void parse_manual();
 
         bool push(function_list_t items) {
             if (items.empty()) {
@@ -55,11 +57,12 @@ namespace func_parser {
             progress_->step();
         }
 
-        Img* image_ = nullptr;
+        cont::ImageBase* image_ = nullptr;
         std::vector<function_list_t> function_lists_;
         function_list_t function_list_; // function_lists_ combined and sanitized basically
         config_parser::func_parser_config_t config_ = {};
         config_parser::obfuscator_config_t obfuscator_config_ = {};
+        std::vector<config_parser::function_configuration_t> function_configurations_;
         std::optional<progress::Progress> progress_ = std::nullopt;
     };
 } // namespace func_parser

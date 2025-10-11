@@ -51,6 +51,7 @@ jobs:
         run: |
           echo "Checks: '-*'" > build/.clang-tidy
           echo "Checks: '-*'" > vendor/zasm/.clang-tidy
+          echo "Checks: '-*'" > vendor/unicorn/.clang-tidy
 
       - name: Run clang tidy
         run: |

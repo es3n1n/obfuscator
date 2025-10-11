@@ -9,6 +9,11 @@ msvc-runtime = "static"
 
 [options]
 OBFUSCATOR_BUILD_TESTS = true
+UNICORN_LEGACY_STATIC_ARCHIVE = false
+BUILD_SHARED_LIBS = false
+
+[variables]
+UNICORN_ARCH = "aarch64"
 
 [conditions]
 build-tests = "OBFUSCATOR_BUILD_TESTS"

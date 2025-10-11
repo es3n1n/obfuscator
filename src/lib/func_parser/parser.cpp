@@ -1,12 +1,13 @@
 #include "func_parser/parser.hpp"
+
+#include "cont/pe/image.hpp"
 #include "func_parser/common/combiner.hpp"
 #include "func_parser/map/map.hpp"
 #include "func_parser/pdb/pdb.hpp"
 #include <es3n1n/common/logger.hpp>
 
 namespace func_parser {
-    template <pe::any_image_t Img>
-    void Instance<Img>::collect_functions() {
+    void Instance::collect_functions() {
         // Parsing from all sources possible
         //
         parse();
@@ -28,17 +29,20 @@ namespace func_parser {
         logger::debug("func_parser: discovered {} functions", function_list_.size());
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::parse() {
-        parse_pdb();
+    void Instance::parse() {
+        if (image_->image_type() == cont::ContImageType::PE) {
+            parse_pdb();
+        }
         progress_step();
 
         parse_map();
         progress_step();
+
+        parse_manual();
+        progress_step();
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::parse_pdb() {
+    void Instance::parse_pdb() {
         // If force disabled
         //
         if (!config_.pdb_enabled) {
@@ -47,7 +51,7 @@ namespace func_parser {
 
         // Obtaining base of code
         //
-        const auto base_of_code = image_->raw_image->get_nt_headers()->optional_header.base_of_code;
+        const auto base_of_code = reinterpret_cast<cont::pe::Image*>(image_)->get_base_of_code();
 
         // Trying to parse from a custom pdb path first
         //
@@ -58,10 +62,10 @@ namespace func_parser {
         }
 
         // Trying to parse from a codeview path
-        //
-        if (push(pdb::discover_functions(image_->find_codeview70(), base_of_code))) {
-            return;
-        }
+        // \todo @es3n1n: implement
+        // if (push(pdb::discover_functions(image_->find_codeview70(), base_of_code))) {
+        //     return;
+        // }
 
         // Trying to find .pdb near the executable
         //
@@ -70,8 +74,7 @@ namespace func_parser {
         push(pdb::discover_functions(pdb_path, base_of_code));
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::parse_map() {
+    void Instance::parse_map() {
         // If force disabled
         //
         if (!config_.map_enabled) {
@@ -93,5 +96,20 @@ namespace func_parser {
         push(map::discover_functions(map_path, image_->sections));
     }
 
-    PE_DECL_TEMPLATE_CLASSES(Instance);
+    void Instance::parse_manual() {
+        std::vector<function_t> functions = {};
+
+        for (auto& func : function_configurations_) {
+            if (!func.rva.has_value()) {
+                continue;
+            }
+
+            auto& new_func = functions.emplace_back();
+            new_func.rva = func.rva.value();
+            new_func.name = func.name();
+            new_func.valid = true;
+        }
+
+        push(functions);
+    }
 } // namespace func_parser

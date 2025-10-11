@@ -10,81 +10,30 @@
 #include <list>
 
 namespace analysis {
-    template <pe::any_image_t Img>
     class Function {
     public:
-        Function(Img* image, const func_parser::function_t& func): parsed_func(func) {
-            bb_decomp::Instance<Img> bb_decomp_inst(image, func.rva, func.size);
-            bb_storage = bb_decomp_inst.export_blocks();
-            program = bb_decomp_inst.export_program();
+        Function(cont::ImageBase* image, const func_parser::function_t& func): image_mode(image->mode()), parsed_func(func), lru_reg(LRUReg(image_mode)) {
+            bb_decomp::Instance bb_decomp_inst(image, func.rva, func.size);
+            setup(bb_decomp_inst, image);
+        }
 
-            calc_range();
-
-            /// Init the bb provider
-            bb_provider = std::make_shared<functional_bb_provider_t>();
-
-            /// Set RVA finder
-            bb_provider->set_rva_finder([storage = bb_storage.get()](const rva_t rva, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Find by RVA
-                auto it = std::ranges::find_if(storage->basic_blocks, [rva](auto&& bb) -> bool {
-                    return bb->start_rva.has_value() && bb->start_rva.value() == rva; //
-                });
-
-                /// Return wrapped in optional
-                return it == std::end(storage->basic_blocks) ? std::nullopt : std::make_optional(*it);
-            });
-
-            /// Set VA finder
-            bb_provider->set_va_finder([img_base = image->raw_image->get_nt_headers()->optional_header.image_base,
-                                        provider = bb_provider.get()](const rva_t va, bb_t* callee) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Substract base and find by RVA
-                return provider->find_by_start_rva(va - img_base, callee); //
-            });
-
-            /// Set Label finder
-            bb_provider->set_label_finder([storage = bb_storage.get()](const zasm::Label* label, bb_t*) -> std::optional<std::shared_ptr<bb_t>> {
-                for (auto& bb : storage->basic_blocks) {
-                    /// Continue if bb doesn't contain this label
-                    if (!bb->contains_label(label->getId())) {
-                        continue;
-                    }
-
-                    return bb;
-                }
-
-                return std::nullopt;
-            });
-
-            /// Set reference acquire callback
-            bb_provider->set_ref_acquire([storage = bb_storage.get()](const bb_t* bb) -> std::optional<std::shared_ptr<bb_t>> {
-                /// Try to find by ptr
-                auto it = std::ranges::find_if(storage->basic_blocks, [bb](const auto& p) -> bool {
-                    return p.get() == bb; //
-                });
-
-                /// Not found
-                if (it == std::end(storage->basic_blocks)) {
-                    return std::nullopt;
-                }
-
-                /// Found
-                return std::make_optional(*it);
-            });
-
-            assembler = std::make_shared<zasm::x86::Assembler>(*program);
-            observer = std::make_shared<Observer>(program, bb_storage, bb_provider);
-
-            apply_passes(image);
+        Function(const cont::ImageMode image_mode, const std::span<std::uint8_t> raw_data)
+            : image_mode(image_mode), parsed_func(std::nullopt), lru_reg(LRUReg(image_mode)) {
+            /// \fixme @es3n1n: this is wrong
+            bb_decomp::Instance bb_decomp_inst(image_mode == cont::ImageMode::X64 ? zasm::MachineMode::AMD64 : zasm::MachineMode::I386, raw_data);
+            setup(bb_decomp_inst);
         }
 
         ~Function() = default;
         Function(const Function& instance)
-            : program(instance.program), assembler(instance.assembler), observer(instance.observer), bb_storage(instance.bb_storage),
-              parsed_func(instance.parsed_func), range(instance.range), lru_reg(instance.lru_reg), bb_provider(instance.bb_provider) { }
+            : program(instance.program), assembler(instance.assembler), observer(instance.observer), image_mode(instance.image_mode),
+              bb_storage(instance.bb_storage), parsed_func(instance.parsed_func), range(instance.range), lru_reg(instance.lru_reg),
+              bb_provider(instance.bb_provider) { }
 
     private:
-        void apply_passes(Img* image);
+        void apply_passes(std::optional<cont::ImageBase*> image = std::nullopt);
         void calc_range();
+        void setup(bb_decomp::Instance& decomp, std::optional<cont::ImageBase*> image = std::nullopt);
 
     public:
         // A zasm program instance that contains all of our instructions
@@ -93,13 +42,16 @@ namespace analysis {
         std::shared_ptr<zasm::x86::Assembler> assembler;
         std::shared_ptr<Observer> observer;
 
+        ///
+        cont::ImageMode image_mode;
+
         // A list of split basic blocks
         //
         std::shared_ptr<bb_storage_t> bb_storage;
 
         // Info about the function from the .map/.pdb files
         //
-        func_parser::function_t parsed_func;
+        std::optional<func_parser::function_t> parsed_func;
 
         // A start/end range of function
         //
@@ -107,7 +59,7 @@ namespace analysis {
 
         // Least recently used register info
         //
-        LRUReg<Img> lru_reg;
+        LRUReg lru_reg;
 
         // A list of references within the image, key is the instruction and value is RVA
         // it referenced
@@ -124,13 +76,16 @@ namespace analysis {
         std::shared_ptr<functional_bb_provider_t> bb_provider;
     };
 
-    template <pe::any_image_t Img>
-    Function<Img> analyse(Img* image, const func_parser::function_t& function) {
-        auto result = Function<Img>(image, function);
-        logger::debug("analysis: analysed function {}", function);
+    inline Function analyse(cont::ImageBase* image, const func_parser::function_t& function) {
+        auto result = Function(image, function);
+        logger::debug("analysis: analysed function {} (range: {:#x}:{:#x})", function, result.range.start, result.range.end);
         if (auto size = result.range.size(); size < easm::kMaxEntryInstructionSize) {
             throw std::runtime_error(std::format("analysis: Minimal function size is {} bytes, got {}", easm::kMaxEntryInstructionSize, size));
         }
         return result;
+    }
+
+    inline auto analyse(const cont::ImageMode image_mode, const std::span<std::uint8_t> function_data) {
+        return Function(image_mode, function_data);
     }
 } // namespace analysis

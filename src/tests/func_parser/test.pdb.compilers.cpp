@@ -12,9 +12,8 @@ namespace {
 
         auto binary = test::read_resource("constant-moving", folder_name, exe_name);
 
-        const auto base_of_code = test::with_image(std::span(binary.data(), binary.size()), []<pe::any_image_t Img>(Img image) -> std::uintptr_t {
-            return image.raw_image->get_nt_headers()->optional_header.base_of_code;
-        });
+        const auto img = cont::pe::Image(binary.data());
+        const auto base_of_code = img.get_base_of_code();
 
         const auto pdb_path = test::get_resource("constant-moving", folder_name, pdb_name);
         const auto functions = func_parser::pdb::discover_functions(pdb_path, base_of_code);

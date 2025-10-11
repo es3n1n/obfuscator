@@ -1,12 +1,12 @@
-#include "pe/rebuilder/rebuilder.hpp"
+#include "cont/pe/rebuilder/rebuilder.hpp"
 
-namespace pe::detail {
+namespace cont::pe::detail {
     namespace {
-        template <any_image_t Img>
-        void init_header_(Img* image, std::vector<std::uint8_t>& data) {
+        template <AnyRawImage Img>
+        void init_header_(Image* image, std::vector<std::uint8_t>& data) {
             // Obtaining header structs
             //
-            auto* nt_headers = image->raw_image->get_nt_headers();
+            auto* nt_headers = image->raw_image().ptr<Img>()->get_nt_headers();
             auto* optional_header = &nt_headers->optional_header;
 
             // Obtaining some other stuff from the header
@@ -22,7 +22,7 @@ namespace pe::detail {
             // \todo: @es3n1n: size_code, size_init_data, size_uninit_data, base_of_code, num_rva_sizes
             // \note: @es3n1n: the sections count field is updated within the `copy_sections` pass!
             //
-            optional_header->size_image = virtual_image_size;
+            optional_header->size_image = static_cast<std::uint32_t>(virtual_image_size);
 
             // Reserving header size
             //
@@ -30,11 +30,22 @@ namespace pe::detail {
 
             // Copying the original header
             // NOLINTNEXTLINE
-            std::memcpy(data.data(), image->raw_image, optional_header->size_headers);
+            std::memcpy(data.data(), image->raw_image().ptr(), optional_header->size_headers);
         }
     } // namespace
 
-    void init_header(const ImgWrapped image, std::vector<std::uint8_t>& data) {
-        UNWRAP_IMAGE(void, init_header_);
+    void init_header(Image* image, std::vector<std::uint8_t>& data) {
+        switch (image->mode()) {
+        case ImageMode::X64: {
+            init_header_<win::image_x64_t>(image, data);
+            break;
+        }
+        case ImageMode::X86: {
+            init_header_<win::image_x86_t>(image, data);
+            break;
+        }
+        default:
+            throw std::out_of_range("cont::pe::detail::init_header: Unsupported image mode");
+        }
     }
-} // namespace pe::detail
+} // namespace cont::pe::detail

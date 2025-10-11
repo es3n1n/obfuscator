@@ -11,21 +11,21 @@ namespace cli {
             {{"-pdb", "[path]", ""}, "Set custom .pdb file location"},
             {{"-map", "[path]", ""}, "Set custom .map file location"},
             {{"-f", "[name]", ""}, "Start new function configuration"},
+            {{"-r", "[rva]", ""}, "Start new function configuration with RVA"},
             {{"-t", "[name]", ""}, "Start new transform configuration"},
             {{"-g", "[name]", ""}, "Start new transform global configuration"},
             {{"-v", "[name]", "[value]"}, "Push value"},
         });
 
-        template <pe::any_image_t Img>
-        void dump_transforms(const std::string_view platform_name) {
+        inline void dump_transforms() {
             /// Header
-            logger::info("Available {} transforms:", platform_name);
+            logger::info("Available transforms:");
 
             /// Iterate over the transforms
-            for (auto& scheduler = obfuscator::TransformScheduler::get().for_arch<Img>(); //
-                 auto& [tag, transform] : scheduler.transforms) {
+            for (auto& scheduler = obfuscator::TransformScheduler::get(); //
+                 auto& [tag, transform] : scheduler.container.transforms) {
                 /// Get the shared cfg
-                auto& shared_cfg = obfuscator::TransformSharedConfigStorage::get().get_for(tag);
+                const auto& shared_cfg = obfuscator::TransformSharedConfigStorage::get().get_for(tag);
 
                 /// Dump transform name
                 logger::info<1>("{}", shared_cfg.name);
@@ -51,7 +51,7 @@ namespace cli {
             logger::info("Shared transform variables (e.g could be set for every transform):");
 
             /// Get some scheduler and any transform + shared config for it
-            const auto& scheduler = obfuscator::TransformScheduler::get().for_arch<pe::X64Image>();
+            const auto& scheduler = obfuscator::TransformScheduler::get().container;
             const auto& shared_cfg = obfuscator::TransformSharedConfigStorage::get().get_for(scheduler.transforms.begin()->first);
 
             /// Dump all vars + their defaults
@@ -86,10 +86,7 @@ namespace cli {
                         "-v SomeGlobalName 1337");
         pad();
 
-        detail::dump_transforms<pe::X64Image>("x64");
-        pad();
-
-        detail::dump_transforms<pe::X86Image>("x86");
+        detail::dump_transforms();
         pad();
 
         detail::dump_shared_vars();

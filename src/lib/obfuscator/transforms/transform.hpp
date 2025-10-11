@@ -47,10 +47,9 @@ namespace obfuscator {
 
     /// \brief Obfuscation transform
     /// \tparam Img PE Image type, either x64 or x86
-    template <pe::any_image_t Img>
     class Transform {
     public:
-        DEFAULT_CT_CTOR(Transform);
+        DEFAULT_CTOR(Transform);
         NON_COPYABLE(Transform);
         virtual ~Transform() = default;
 
@@ -63,25 +62,25 @@ namespace obfuscator {
         /// \brief Transform routine
         /// \param ctx Transform context
         /// \param function Routine that it should transform
-        virtual void run_on_function(TransformContext& ctx, Function<Img>* function) = 0;
+        virtual void run_on_function(TransformContext& ctx, Function* function) = 0;
 
         /// \brief Transform basic block
         /// \param ctx Transform context
         /// \param function Routine that it should transform
         /// \param basic_block Basic block that it should transform
-        virtual void run_on_bb(TransformContext& ctx, Function<Img>* function, analysis::bb_t* basic_block) = 0;
+        virtual void run_on_bb(TransformContext& ctx, Function* function, analysis::bb_t* basic_block) = 0;
 
         /// \brief Transform zasm node
         /// \param ctx Transform context
         /// \param function Routine that it should transform
         /// \param node Node that it should transform
-        virtual void run_on_node(TransformContext& ctx, Function<Img>* function, zasm::Node* node) = 0;
+        virtual void run_on_node(TransformContext& ctx, Function* function, zasm::Node* node) = 0;
 
         /// \brief Transform analysis insn
         /// \param ctx Transform context
         /// \param function Routine that it should transform
         /// \param insn Instruction that it should transform
-        virtual void run_on_insn(TransformContext& ctx, Function<Img>* function, analysis::insn_t* insn) = 0;
+        virtual void run_on_insn(TransformContext& ctx, Function* function, analysis::insn_t* insn) = 0;
 
         /// \brief General purpose initializer
         void init() {
@@ -158,10 +157,9 @@ namespace obfuscator {
     /// \brief Function obfuscation transform. This class automatically discards bb/node/insn callbacks,
     /// just a nice thing to have if you don't want to override 3 unused methods every time.
     /// \tparam Img
-    template <pe::any_image_t Img>
-    class FunctionTransform : public Transform<Img> {
+    class FunctionTransform : public Transform {
     public:
-        friend Transform<Img>;
+        friend Transform;
 
         /// \brief Callback that initializes `features_set_`
         void init_features() override {
@@ -169,22 +167,21 @@ namespace obfuscator {
         }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function* /*function*/, zasm::Node* /*node*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief BB obfuscation transform.
     /// Same as `FunctionTransform`, but it discards func/node/insn transforms instead.
     /// \tparam Img
-    template <pe::any_image_t Img>
-    class BBTransform : public Transform<Img> {
+    class BBTransform : public Transform {
     public:
-        friend Transform<Img>;
+        friend Transform;
 
         /// \brief Callback that initializes `features_set_`
         void init_features() override {
@@ -192,22 +189,21 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function* /*function*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function* /*function*/, zasm::Node* /*node*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief Node obfuscation transform.
     /// Same as `FunctionTransform`, but it discards bb/func/insn transforms instead.
     /// \tparam Img
-    template <pe::any_image_t Img>
-    class NodeTransform : public Transform<Img> {
+    class NodeTransform : public Transform {
     public:
-        friend Transform<Img>;
+        friend Transform;
 
         /// \brief Callback that initializes `features_set_`
         void init_features() override {
@@ -215,22 +211,21 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function* /*function*/) override { }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform analysis insn
-        void run_on_insn(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::insn_t* /*insn*/) override { }
+        void run_on_insn(TransformContext& /*ctx*/, Function* /*function*/, analysis::insn_t* /*insn*/) override { }
     };
 
     /// \brief Instruction obfuscation transform.
     /// Same as `FunctionTransform`, but it discards bb/func/node transforms instead.
     /// \tparam Img
-    template <pe::any_image_t Img>
-    class InstructionTransform : public Transform<Img> {
+    class InstructionTransform : public Transform {
     public:
-        friend Transform<Img>;
+        friend Transform;
 
         /// \brief Callback that initializes `features_set_`
         void init_features() override {
@@ -238,12 +233,12 @@ namespace obfuscator {
         }
 
         /// \brief Transform routine
-        void run_on_function(TransformContext& /*ctx*/, Function<Img>* /*function*/) override { }
+        void run_on_function(TransformContext& /*ctx*/, Function* /*function*/) override { }
 
         /// \brief Transform basic block
-        void run_on_bb(TransformContext& /*ctx*/, Function<Img>* /*function*/, analysis::bb_t* /*bb*/) override { }
+        void run_on_bb(TransformContext& /*ctx*/, Function* /*function*/, analysis::bb_t* /*bb*/) override { }
 
         /// \brief Transform zasm node
-        void run_on_node(TransformContext& /*ctx*/, Function<Img>* /*function*/, zasm::Node* /*node*/) override { }
+        void run_on_node(TransformContext& /*ctx*/, Function* /*function*/, zasm::Node* /*node*/) override { }
     };
 } // namespace obfuscator

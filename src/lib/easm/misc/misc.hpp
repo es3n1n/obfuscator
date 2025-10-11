@@ -1,5 +1,5 @@
 #pragma once
-#include "pe/pe.hpp"
+#include "cont/pe/image.hpp"
 
 #include <optional>
 #include <stdexcept>
@@ -8,12 +8,16 @@
 namespace easm {
     constexpr size_t kMaxEntryInstructionSize = 5; // jump in our case
 
-    template <pe::any_image_t Img>
-    constexpr zasm::x86::Gp sp_for_arch() {
-        if constexpr (pe::is_x64_v<Img>) {
+    constexpr zasm::x86::Gp sp_for_arch(const zasm::MachineMode machine_mode) {
+        switch (machine_mode) {
+        case zasm::MachineMode::AMD64: {
             return zasm::x86::rsp;
-        } else {
+        }
+        case zasm::MachineMode::I386: {
             return zasm::x86::esp;
+        }
+        default:
+            throw std::out_of_range("easm: sp_for_arch: Unsupported machine mode");
         }
     }
 
@@ -29,21 +33,17 @@ namespace easm {
         }
     }
 
-    template <pe::any_image_t Img>
-    constexpr zasm::BitSize sp_size_for_arch() {
-        if constexpr (pe::is_x64_v<Img>) {
-            return sp_size_for_arch(zasm::MachineMode::AMD64);
-        } else {
-            return sp_size_for_arch(zasm::MachineMode::I386);
-        }
-    }
-
-    template <pe::any_image_t Img, typename... TArgs>
-    constexpr zasm::Mem ptr(TArgs... args) {
-        if constexpr (pe::is_x64_v<Img>) {
+    template <typename... TArgs>
+    constexpr zasm::Mem ptr(const zasm::MachineMode machine_mode, TArgs... args) {
+        switch (machine_mode) {
+        case zasm::MachineMode::AMD64: {
             return zasm::x86::qword_ptr(std::forward<TArgs>(args)...);
-        } else {
+        }
+        case zasm::MachineMode::I386: {
             return zasm::x86::dword_ptr(std::forward<TArgs>(args)...);
+        }
+        default:
+            throw std::out_of_range("easm: ptr: Unsupported image mode");
         }
     }
 
@@ -78,14 +78,21 @@ namespace easm {
         }
 
         bool result = false;
-        for (std::size_t i = 0; i < insn.getOperandCount() && !result; ++i) {
-            if (const auto* op_reg = insn.getOperandIf<zasm::Reg>(i); op_reg != nullptr) {
-                result = op_reg->isIP();
-                continue;
-            }
 
-            if (const auto* op_mem = insn.getOperandIf<zasm::Mem>(i); op_mem != nullptr) {
-                result = op_mem->getBase().isIP();
+        if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
+            for (const auto& op : detail->getOperands()) {
+                if (result) {
+                    break;
+                }
+
+                if (const auto* op_reg = op.getIf<zasm::Reg>(); op_reg != nullptr) {
+                    result = op_reg->isIP();
+                    continue;
+                }
+
+                if (const auto* op_mem = op.getIf<zasm::Mem>(); op_mem != nullptr) {
+                    result = op_mem->getBase().isIP();
+                }
             }
         }
 
@@ -205,7 +212,12 @@ namespace easm {
 
     inline void assert_operand_size(const zasm::MachineMode machine_mode [[maybe_unused]], const zasm::Instruction* insn [[maybe_unused]],
                                     const std::size_t index [[maybe_unused]], const zasm::Reg reg [[maybe_unused]]) {
-        assert(get_operand_size(machine_mode, insn, index) == reg.getBitSize(machine_mode));
+        const auto operand_size = get_operand_size(machine_mode, insn, index);
+        const auto reg_size = reg.getBitSize(machine_mode);
+        if (operand_size != reg_size) {
+            assert(false);
+            throw std::runtime_error("assert_operand_size: Operand size does not match register size");
+        }
     }
 
     inline bool is_sp(const zasm::MachineMode machine_mode, const zasm::Reg reg) {
@@ -243,6 +255,29 @@ namespace easm {
 
             if (const auto* op_reg = insn.getOperandIf<zasm::Reg>(i); op_reg != nullptr) {
                 result.emplace_back(*op_reg);
+            }
+        }
+
+        return result;
+    }
+
+    inline bool affects_flags(const zasm::Instruction& insn) {
+        bool result = false;
+
+        if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
+            for (const auto& op : detail->getOperands()) {
+                if (result) {
+                    break;
+                }
+
+                if (const auto* op_reg = op.getIf<zasm::Reg>(); op_reg != nullptr) {
+                    result = op_reg->getClass() == static_cast<zasm::Reg::Class>(ZYDIS_REGCLASS_FLAGS);
+                    continue;
+                }
+
+                if (const auto* op_mem = op.getIf<zasm::Mem>(); op_mem != nullptr) {
+                    result = op_mem->getBase().getClass() == static_cast<zasm::Reg::Class>(ZYDIS_REGCLASS_FLAGS);
+                }
             }
         }
 

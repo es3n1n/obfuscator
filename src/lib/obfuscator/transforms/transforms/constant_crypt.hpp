@@ -4,8 +4,7 @@
 #include "obfuscator/transforms/transforms/util/anti_decompilers.hpp"
 
 namespace obfuscator::transforms {
-    template <pe::any_image_t Img>
-    class ConstantCrypt final : public BBTransform<Img> {
+    class ConstantCrypt final : public BBTransform {
     public:
         enum Var : std::uint8_t {
             EXPR_SIZE = 0
@@ -16,27 +15,32 @@ namespace obfuscator::transforms {
             this->new_var(Var::EXPR_SIZE, "expr_size", false, TransformConfig::Var::Type::PER_FUNCTION, 5);
         }
 
-        void transform_insn(const TransformContext& ctx, Function<Img>* function, analysis::insn_t* insn) const {
+        void transform_insn(const TransformContext& ctx, Function* function, analysis::insn_t* insn) const {
             /// Ignore relocated stuff
             if (insn->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
                 return;
             }
 
-            /// Don't really feel like messing around with something that affects IP
-            if (easm::affects_ip(*insn->ref)) {
+            /// Don't really feel like messing around with something that affects IP/flags
+            if (easm::affects_ip(*insn->ref) || easm::affects_flags(*insn->ref)) {
                 return;
             }
 
             /// Looking up for immediate operands
-            auto imm_op_index = insn->find_operand_index_if<zasm::Imm>();
+            const auto imm_op_index = insn->find_operand_index_if<zasm::Imm>();
             if (!imm_op_index.has_value()) {
                 return;
             }
-            const auto* imm_op = insn->ref->getOperandIf<zasm::Imm>(imm_op_index.value());
+            const auto imm_op = insn->ref->getOperand<zasm::Imm>(imm_op_index.value());
 
             /// Get its value, bitsize
-            const auto imm_value = imm_op->value<std::uint64_t>();
+            const auto imm_value = imm_op.value<std::uint64_t>();
             const auto imm_bitsize = easm::get_operand_size(function->machine_mode, insn->ref, 0);
+
+            if (imm_bitsize == zasm::toBitSize(8)) {
+                /// \fixme @es3n1n: see `gp64_to_gp8` fixme
+                return;
+            }
 
             /// Export all registers and push them to the LRU blacklist
             for (auto reg : easm::get_all_registers(*insn->ref)) {
@@ -46,14 +50,14 @@ namespace obfuscator::transforms {
 
             /// Alloc some variables
             auto var_alloc = function->var_alloc();
-            auto var_1 = var_alloc.get_for_bits(imm_bitsize);
+            const auto var_1 = var_alloc.get_for_bits(imm_bitsize);
 
             /// Set cursor
-            auto as_opt = function->cursor->before(insn->node_ref);
+            const auto as_opt = function->cursor->before(insn->node_ref);
             if (!as_opt.has_value()) {
                 return;
             }
-            auto as = *as_opt;
+            auto* as = *as_opt;
 
             /// Detect sp-related things before we lift our stuff
             std::optional<zasm::Mem*> sp_mem = std::nullopt;
@@ -78,20 +82,20 @@ namespace obfuscator::transforms {
             auto* pop_at = insn->node_ref;
 
             /// Generate decryption
-            const auto expr_size = this->template get_var_value<int>(Var::EXPR_SIZE);
+            const auto expr_size = this->get_var_value<int>(Var::EXPR_SIZE);
             assert(expr_size > 0);
             auto expression = mathop::ExpressionGenerator::get().generate(imm_bitsize, expr_size);
-            auto evaluated = expression.emulate(mathop::imm_for_bits(imm_bitsize, imm_value));
+            const auto evaluated = expression.emulate(mathop::imm_for_bits(imm_bitsize, static_cast<std::int64_t>(imm_value)));
 
             /// Setup dst register and lift decryption
             as->mov(var_1, mathop::imm_to_zasm(evaluated));
 
             /// Lift decryption
-            auto decryption_start_at = as->getCursor();
+            auto* const decryption_start_at = as->getCursor();
             expression.lift_revert(as, var_1);
 
             /// Remember the last decryption node
-            auto decryption_ends_at = as->getCursor();
+            auto* const decryption_ends_at = as->getCursor();
 
             /// Prevent symbolic execution
             transform_util::anti_symbolic_execution(var_alloc, imm_bitsize, function->program.get(), as, decryption_start_at, decryption_ends_at);
@@ -102,14 +106,19 @@ namespace obfuscator::transforms {
                 easm::assert_operand_used_reg(function->machine_mode, insn->ref, 0, var_1);
             }
 
-            /// Update stack offset, if needed, because we're gonna change its layout with our pushes
-            if (sp_mem.has_value()) {
-                (*sp_mem)->setDisplacement((*sp_mem)->getDisplacement() + var_alloc.stack_size());
-                logger::debug("constant_crypt: updated sp displacement at {:#x}", *insn->rva);
-            }
-
             /// Swap the operand
             insn->ref->setOperand(*imm_op_index, var_1);
+            if (const auto res = insn->ref->getDetail(function->machine_mode); !res.hasValue()) {
+                logger::warn("constant_crypt: unable to swap to new register");
+                insn->ref->setOperand(*imm_op_index, imm_op);
+                return;
+            }
+
+            /// Update stack offset, if needed, because we're gonna change its layout with our pushes
+            if (sp_mem.has_value()) {
+                (*sp_mem)->setDisplacement(static_cast<std::int64_t>((*sp_mem)->getDisplacement() + var_alloc.stack_size()));
+                logger::debug("constant_crypt: updated sp displacement at {:#x}", *insn->rva);
+            }
 
             /// Allocate vars on stack
             as = *function->cursor->after(push_at);
@@ -129,7 +138,7 @@ namespace obfuscator::transforms {
         /// \param ctx Transform context
         /// \param function Routine that it should transform
         /// \param bb BB that it should transform
-        void run_on_bb(TransformContext& ctx, Function<Img>* function, analysis::bb_t* bb) override {
+        void run_on_bb(TransformContext& ctx, Function* function, analysis::bb_t* bb) override {
             for (auto& insn : bb->temp_insns_copy()) {
                 transform_insn(ctx, function, insn.get());
             }

@@ -5,7 +5,7 @@
 
 namespace func_parser_util {
     [[nodiscard]] inline auto get_sections(std::span<std::uint8_t> pe_bytes) {
-        return test::with_image(pe_bytes, []<pe::any_image_t Img>(Img image) -> std::vector<pe::section_t> { return image.sections; });
+        return cont::pe::Image(pe_bytes.data()).sections;
     }
 
     [[nodiscard]] inline const func_parser::function_t* get_function(const func_parser::function_list_t& list, const std::string_view name) {

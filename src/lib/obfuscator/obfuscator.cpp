@@ -4,6 +4,7 @@
 #include "obfuscator/config_merger/config_merger.hpp"
 #include "obfuscator/function.hpp"
 #include "obfuscator/transforms/scheduler.hpp"
+#include "util/sections.hpp"
 
 #include <es3n1n/common/logger.hpp>
 #include <es3n1n/common/progress.hpp>
@@ -12,11 +13,15 @@
 namespace obfuscator {
     constexpr size_t kTextSectionAlignment = 0x10;
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::setup() {
+    void Instance::setup() {
+        /// Make sure that image is set
+        if (!image_.has_value()) {
+            throw std::runtime_error("obfuscator: unable to setup with image_ being nullopt");
+        }
+
         // Initializing instances
         //
-        func_parser_.setup(image_, config_.func_parser_config(), config_.obfuscator_config());
+        func_parser_.setup(*image_, config_.func_parser_config(), config_.obfuscator_config(), config_.function_configurations());
 
         // Running setup tasks
         //
@@ -38,173 +43,207 @@ namespace obfuscator {
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::add_function(const config_parser::function_configuration_t& configuration) {
-        /// We don't want to obfuscate functions with 0 transforms
-        // if (configuration.transform_configurations.empty()) {
-        // logger::warn("collect: excluding function {} from obfuscation list", configuration.function_name);
-        // return;
-        //}
+    Instance::nameless_function_t& Instance::add_function(std::span<std::uint8_t> raw_function_bytes,
+                                                          const config_parser::nameless_function_configuration_t& configuration) {
+        assert(!raw_function_bytes.empty()); /// what are you doing man
 
-        /// Try to find function info from map/pdb
-        const auto function_info =
-            func_parser_.find_if([&configuration](const func_parser::function_t& func) -> bool { return func.name == configuration.function_name; });
-        if (!function_info.has_value()) {
-            throw std::runtime_error(std::format("collect: function {} not found", configuration.function_name));
-        }
+        /// Schedule transforms
+        schedule_transforms(configuration.transform_configurations);
 
-        /// Enable needed transforms
-        auto& scheduler = TransformScheduler::get();
-        for (const auto& [tag, _] : configuration.transform_configurations) {
-            scheduler.enable_transform(tag);
-        }
-
-        /// Store function info
-        functions_.emplace_back(function_t{
-            .analysed = analysis::analyse(image_, function_info.value()),
+        /// Analyse function and store it
+        return nameless_functions_.emplace_back(nameless_function_t{
+            .analysed = analysis::analyse(image_mode_, raw_function_bytes),
             .configuration = configuration,
         });
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::obfuscate() {
-        /// Debug log
-        logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size());
+    Instance::function_t& Instance::add_function(const config_parser::function_configuration_t& configuration) {
+        /// Make sure image is set
+        if (!image_.has_value()) {
+            throw std::runtime_error("obfuscator: unable to add non-nameless function with image_ being nullopt");
+        }
 
-        if (functions_.empty()) {
+        /// Try to find function info from map/pdb
+        const auto function_info = func_parser_.find_if([&configuration](const func_parser::function_t& func) -> bool {
+            if (configuration.rva.has_value() && func.rva == *configuration.rva) {
+                return true;
+            }
+            if (configuration.function_name.has_value() && func.name == *configuration.function_name) {
+                return true;
+            }
+            return false;
+        });
+        if (!function_info.has_value()) {
+            throw std::runtime_error(std::format("collect: function {} not found", configuration.name()));
+        }
+
+        /// Schedule transforms
+        schedule_transforms(configuration.transform_configurations);
+
+        /// Store function info
+        return functions_.emplace_back(function_t{
+            .analysed = analysis::analyse(*image_, function_info.value()),
+            .configuration = configuration,
+        });
+    }
+
+    void Instance::obfuscate() {
+        /// Debug log
+        logger::info("obfuscator: got {} function(s) to obfuscate", functions_.size() + nameless_functions_.size());
+
+        if (functions_.empty() && nameless_functions_.empty()) {
             throw std::runtime_error("obfuscator: got 0 functions to protect");
         }
 
-        /// Obtain transform scheduler for the platform
-        auto& scheduler = TransformScheduler::get().for_arch<Img>();
-        config_merger::apply_global_vars<Img>(config_);
+        /// Apply global vars from the config
+        config_merger::apply_global_vars(config_);
 
-        /// Iterate over functions that we need to obfuscate
+        /// Iterate over the named functions and obfuscate them
         for (const auto& func : functions_) {
-            /// Init the `obfuscator::Function` that is going to be used within
-            /// transforms
-            auto obf_func = obfuscator::Function<Img>(func.analysed, image_);
+            auto obf_func = Function(func.analysed);
+            obfuscate(func.configuration.transform_configurations, obf_func, func.configuration.name());
+        }
 
-            /// Export tags that this function would need
-            auto tags = std::views::all(func.configuration.transform_configurations) |
-                        std::views::transform([](const config_parser::transform_configuration_t& it) -> TransformTag { return it.tag; }) |
-                        std::ranges::to<std::vector>();
-
-            /// Export transforms
-            auto transforms = scheduler.select_transforms(tags);
-
-            /// Init the progress bar
-            auto progress = progress::Progress(std::format("obfuscator: obfuscating {}", obf_func.parsed_func.name), transforms.size());
-
-            /// An util that would check the chances and all this other crap, that would be
-            /// needed for like  every possible function/transform
-            auto execute_transform = [func](const TransformTag tag, const std::function<void(TransformContext&)>& callback,
-                                            const bool check_chances = true) -> void {
-                auto preset = std::ranges::find_if(func.configuration.transform_configurations, [tag](auto&& it) -> bool {
-                    return it.tag == tag; //
-                });
-                if (preset == std::end(func.configuration.transform_configurations)) {
-                    throw std::runtime_error(std::format("obfuscate: unable to find configuration for transform {}", tag));
-                }
-
-                /// Apply the preset
-                config_merger::apply_config<Img>(*preset);
-
-                /// Get the shared config and check the chance
-                auto& cfg = TransformSharedConfigStorage::get().get_for(tag);
-
-                /// Check the chance
-                /// \todo @es3n1n: Check for chance feature
-                if (check_chances && !rnd::chance(cfg.chance())) {
-                    return;
-                }
-
-                /// Otherwise run this method
-                for (std::size_t i = 0; i < cfg.repeat_times(); ++i) {
-                    /// Init context, run the task
-                    auto context = TransformContext(cfg);
-
-                    do {
-                        context.rerun_me = false;
-                        callback(context);
-                    } while (context.rerun_me);
-                }
-            };
-            auto execute_transform_no_chances = [&](const TransformTag tag, const std::function<void(TransformContext&)>& callback) -> void {
-                return execute_transform(tag, callback, false);
-            };
-
-            /// \note @es3n1n: We can't iterate through the insns/bbs and execute transforms
-            /// from there as it would break the scheduling order
-            for (auto& [tag, transform] : transforms) {
-                /// Apply function transform
-                if (transform->feature(TransformFeaturesSet::HAS_FUNCTION_TRANSFORM)) {
-                    execute_transform_no_chances(tag, [&obf_func, &transform](auto& ctx) -> void {
-                        transform->run_on_function(ctx, &obf_func); //
-                    });
-                }
-
-                /// Apply basic block transforms
-                if (transform->feature(TransformFeaturesSet::HAS_BB_TRANSFORM)) {
-                    for (auto& basic_block : obf_func.bb_storage->temp_copy()) {
-                        execute_transform(tag, [&obf_func, &transform, &basic_block](auto& ctx) -> void {
-                            transform->run_on_bb(ctx, &obf_func, basic_block.get()); //
-                        });
-                    }
-                }
-
-                /// Apply analysis insn transforms
-                if (transform->feature(TransformFeaturesSet::HAS_INSN_TRANSFORM)) {
-                    for (auto& basic_block : obf_func.bb_storage->temp_copy()) {
-                        for (auto& insn : basic_block->temp_insns_copy()) {
-                            execute_transform(tag, [&obf_func, &transform, &insn](auto& ctx) -> void {
-                                transform->run_on_insn(ctx, &obf_func, insn.get()); //
-                            });
-                        }
-                    }
-                }
-
-                /// Apply program nodes transform
-                if (transform->feature(TransformFeaturesSet::HAS_NODE_TRANSFORM)) {
-                    for (auto* node = obf_func.program->getHead(); node != nullptr; node = node->getNext()) {
-                        /// Transform nodes
-                        execute_transform(tag, [&obf_func, &transform, &node](auto& ctx) -> void {
-                            transform->run_on_node(ctx, &obf_func, node); //
-                        });
-                    }
-                }
-
-                /// Increment progress bar
-                progress.step();
-            }
-
-            /// We are done here
+        /// Iterate over the nameless functions and obfuscate them
+        for (const auto& func : nameless_functions_) {
+            auto obf_func = Function(func.analysed);
+            obfuscate(func.configuration.transform_configurations, obf_func, "nameless");
         }
     }
 
-    template <pe::any_image_t Img>
-    void Instance<Img>::assemble() {
+    void Instance::obfuscate(const config_parser::transform_configurations_t& configurations, Function& function, const std::string& function_name) const {
+        auto& scheduler = TransformScheduler::get().container;
+
+        /// Export tags that this function would need
+        auto tags = std::views::all(configurations) |
+                    std::views::transform([](const config_parser::transform_configuration_t& it) -> TransformTag { return it.tag; }) |
+                    std::ranges::to<std::vector>();
+
+        /// Export transforms
+        auto transforms = scheduler.select_transforms(tags);
+
+        /// Init the progress bar
+        auto progress = progress::Progress(std::format("obfuscator: obfuscating {}", function_name), transforms.size());
+
+        /// An util that would check the chances and all this other crap, that would be
+        /// needed for like  every possible function/transform
+        auto execute_transform = [configurations](const TransformTag tag, const std::function<void(TransformContext&)>& callback,
+                                                  const bool check_chances = true) -> void {
+            const auto preset = std::ranges::find_if(configurations, [tag](auto&& it) -> bool {
+                return it.tag == tag; //
+            });
+            if (preset == std::end(configurations)) {
+                throw std::runtime_error(std::format("obfuscate: unable to find configuration for transform {}", tag));
+            }
+
+            /// Apply the preset
+            config_merger::apply_config(*preset);
+
+            /// Get the shared config and check the chance
+            auto& cfg = TransformSharedConfigStorage::get().get_for(tag);
+
+            /// Check the chance
+            /// \todo @es3n1n: Check for chance feature
+            if (check_chances && !rnd::chance(cfg.chance())) {
+                return;
+            }
+
+            /// Otherwise run this method
+            for (std::size_t i = 0; i < cfg.repeat_times(); ++i) {
+                /// Init context, run the task
+                auto context = TransformContext(cfg);
+
+                do {
+                    context.rerun_me = false;
+                    callback(context);
+                } while (context.rerun_me);
+            }
+        };
+        auto execute_transform_no_chances = [&](const TransformTag tag, const std::function<void(TransformContext&)>& callback) -> void {
+            execute_transform(tag, callback, false);
+        };
+
+        /// \note @es3n1n: We can't iterate through the insns/bbs and execute transforms
+        /// from there as it would break the scheduling order
+        for (auto& [tag, transform] : transforms) {
+            /// Apply function transform
+            if (transform->feature(TransformFeaturesSet::HAS_FUNCTION_TRANSFORM)) {
+                execute_transform_no_chances(tag, [&function, &transform](auto& ctx) -> void {
+                    transform->run_on_function(ctx, &function); //
+                });
+            }
+
+            /// Apply basic block transforms
+            if (transform->feature(TransformFeaturesSet::HAS_BB_TRANSFORM)) {
+                for (auto& basic_block : function.bb_storage->temp_copy()) {
+                    execute_transform(tag, [&function, &transform, &basic_block](auto& ctx) -> void {
+                        transform->run_on_bb(ctx, &function, basic_block.get()); //
+                    });
+                }
+            }
+
+            /// Apply analysis insn transforms
+            if (transform->feature(TransformFeaturesSet::HAS_INSN_TRANSFORM)) {
+                for (const auto& basic_block : function.bb_storage->temp_copy()) {
+                    for (auto& insn : basic_block->temp_insns_copy()) {
+                        execute_transform(tag, [&function, &transform, &insn](auto& ctx) -> void {
+                            transform->run_on_insn(ctx, &function, insn.get()); //
+                        });
+                    }
+                }
+            }
+
+            /// Apply program nodes transform
+            if (transform->feature(TransformFeaturesSet::HAS_NODE_TRANSFORM)) {
+                for (auto* node = function.program->getHead(); node != nullptr; node = node->getNext()) {
+                    /// Transform nodes
+                    execute_transform(tag, [&function, &transform, &node](auto& ctx) -> void {
+                        transform->run_on_node(ctx, &function, node); //
+                    });
+                }
+            }
+
+            /// Increment progress bar
+            progress.step();
+        }
+
+        /// We are done here
+    }
+
+    void Instance::assemble() {
+        /// Make sure that we have an image to deal with
+        if (!image_.has_value()) {
+            throw std::runtime_error("obfuscate: no image available for assembling");
+        }
+
+        /// Notify the user that they would not see nameless function in their binary
+        if (!nameless_functions_.empty()) {
+            logger::warn("please note that {} 'nameless' functions would not be assembled in the output PE", nameless_functions_.size());
+        }
+
         /// Estimating section size
         auto size_estimation_progress = progress::Progress("obfuscator: estimating section size", functions_.size());
-        std::size_t section_size = 0;
+        auto sec_header = sections::get(sections::e_section_t::CODE);
         for (auto& func : functions_) {
+            easm::dump_program(*func.analysed.program);
             const auto program_size = easm::estimate_program_size(*func.analysed.program);
-            section_size += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
+            sec_header.size_raw_data += memory::address{program_size}.align_up(kTextSectionAlignment).as<std::size_t>();
             size_estimation_progress.step();
         }
-        logger::debug("assemble: estimated new section size: {:#x}", section_size);
+        logger::debug("assemble: estimated new section size: {:#x}", sec_header.size_raw_data);
 
         /// Allocate new section
-        auto img_base = image_->raw_image->get_nt_headers()->optional_header.image_base;
-        auto& new_sec = image_->new_section(sections::e_section_t::CODE, section_size);
+        auto img_base = (*image_)->get_image_base();
+        auto& new_sec = (*image_)->new_section(sec_header);
         memory::address virt_address = new_sec.virtual_address;
 
         /// Iterate over the obfuscated functions
         auto linking_progress = progress::Progress("obfuscator: linking functions", functions_.size());
-        for (auto& [func, _] : functions_) {
-            /// \todo @es3n1n: perhaps i should split this monstrosity into a separate functions
 
-            /// Erase the original function code
+        /// Iterating over the enabled functions
+        /// \todo @es3n1n: perhaps i should split this monstrosity into a separate functions
+        for (auto& [func, _] : functions_) {
+            /// Erase the original functions
             for (auto& basic_block : *func.bb_storage) {
                 for (auto& insn : basic_block) {
                     /// Clang-tidy is working a bit weird with smart pointers and `bugprone-unchecked-optional-access`
@@ -219,26 +258,26 @@ namespace obfuscator {
                     const auto randomized = rnd::bytes(*raw_ptr->length);
 
                     /// Replace instruction with junk
-                    auto* insn_ptr = image_->rva_to_ptr(*raw_ptr->rva);
+                    auto* insn_ptr = (*image_)->rva_to_ptr(*raw_ptr->rva);
                     std::memcpy(insn_ptr, randomized.data(), randomized.size());
 
                     /// Remove pe relocation, if there's any
                     if (raw_ptr->reloc.type == analysis::insn_reloc_t::e_type::HEADER) {
-                        image_->relocations.erase(*raw_ptr->rva + raw_ptr->reloc.offset.value_or(0));
+                        (*image_)->relocations.erase(*raw_ptr->rva + raw_ptr->reloc.offset.value_or(0));
                     }
                 }
             }
 
             /// Insert the jmp to obfuscated routine at the very beginning of the function
-            auto* func_start_ptr = image_->rva_to_ptr(func.range.start);
-            auto jmp_data = easm::encode_jmp(image_->guess_machine_mode(), func.range.start + img_base, virt_address + img_base);
+            auto* func_start_ptr = (*image_)->rva_to_ptr(func.range.start);
+            auto jmp_data = easm::encode_jmp(machine_mode(), func.range.start + img_base, virt_address + img_base);
             if (!jmp_data.has_value()) {
                 throw std::runtime_error("assemble: unable to encode jmp");
             }
             std::memcpy(func_start_ptr, jmp_data->data(), jmp_data->size());
 
             /// Assemble the obfuscated function
-            auto assemble_progress = progress::Progress(std::format("obfuscator: assembling {}", func.parsed_func.name), 1);
+            auto assemble_progress = progress::Progress(std::format("obfuscator: assembling {}", func.parsed_func.value().name), 1);
             const auto assembled = easm::assemble_program(virt_address + img_base, *func.program);
             assemble_progress.step();
 
@@ -266,14 +305,14 @@ namespace obfuscator {
                 }
 
                 /// Store the new relocation data
-                image_->relocations[relocation.address - img_base] =
-                    pe::relocation_t{.rva = memory::address{static_cast<uintptr_t>(relocation.address - img_base)},
+                (*image_)->relocations[relocation.address - img_base] =
+                    cont::Relocation{.rva = memory::address{static_cast<uintptr_t>(relocation.address - img_base)},
                                      .size = static_cast<std::uint8_t>(getBitSize(relocation.size) / CHAR_BIT),
-                                     .type = win_reloc_type};
+                                     .type = to_cont(win_reloc_type)};
             }
 
             /// Align size and increment offset
-            const auto aligned_size = memory::address{assembled.data.size()}.align_up(kTextSectionAlignment).as<std::size_t>();
+            const auto aligned_size = memory::address{assembled.data.size()}.align_up(kTextSectionAlignment).as<std::ptrdiff_t>();
             virt_address = virt_address.offset(aligned_size);
 
             /// Increment progress bar
@@ -283,10 +322,14 @@ namespace obfuscator {
         logger::info("assemble: assembled {} functions", functions_.size());
     }
 
-    template <pe::any_image_t Img>
-    std::filesystem::path Instance<Img>::save() {
+    std::filesystem::path Instance::save() {
+        /// We can't rebuild PE without any source PE data :shrug:
+        if (!image_.has_value()) {
+            throw std::runtime_error("assemble: no image for saving");
+        }
+
         logger::info("obfuscator: saving..");
-        auto new_img = image_->rebuild_pe_image();
+        auto new_img = (*image_)->rebuild_image();
 
         auto out_path = config_.obfuscator_config().binary_path;
 
@@ -303,13 +346,18 @@ namespace obfuscator {
         return out_path;
     }
 
-    template <pe::any_image_t Img>
-    std::filesystem::path Instance<Img>::run() {
+    std::filesystem::path Instance::run() {
         setup();
         obfuscate();
         assemble();
         return save();
     }
 
-    PE_DECL_TEMPLATE_CLASSES(Instance);
+    void Instance::schedule_transforms(const config_parser::transform_configurations_t& configurations) {
+        /// Enable needed transforms
+        auto& scheduler = TransformScheduler::get();
+        for (const auto& [tag, _] : configurations) {
+            scheduler.enable_transform(tag);
+        }
+    }
 } // namespace obfuscator
