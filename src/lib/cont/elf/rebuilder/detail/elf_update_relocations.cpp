@@ -55,8 +55,8 @@ namespace cont::elf::detail {
 
                     switch (reloc.type) {
                     case RelocationType::HighLow: {
-                        info.emplace(static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE :
-                                                                                                R_386_RELATIVE)); // NOLINT(bugprone-branch-clone)
+                        // NOLINTNEXTLINE(bugprone-branch-clone)
+                        info.emplace(static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE : R_386_RELATIVE));
                         break;
                     default:
                         throw std::out_of_range("cont::elf::detail::update_relocations: Unsupported relocation type for ELF");
