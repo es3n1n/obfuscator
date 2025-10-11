@@ -8,7 +8,7 @@ namespace obfuscator {
     /// \tparam Img PE Image type, either x64 or x86
     class TransformContainer {
     public:
-        DEFAULT_CT_CTOR_DTOR(TransformContainer);
+        DEFAULT_CTOR_DTOR(TransformContainer);
         NON_COPYABLE(TransformContainer);
         using TransformPtr = std::unique_ptr<Transform>;
         using PairPtr = std::pair<TransformTag, Transform*>;
@@ -54,7 +54,7 @@ namespace obfuscator {
                     continue;
                 }
 
-                result.emplace_back(std::make_pair(tag, it->second.get()));
+                result.emplace_back(tag, it->second.get());
             }
 
             return result;
@@ -75,7 +75,7 @@ namespace obfuscator {
         }
 
         /// \brief Get a std::views iterator for transforms
-        auto transforms_iterator() const {
+        [[nodiscard]] auto transforms_iterator() const {
             return std::views::all(transforms) | std::views::filter([this](const auto& value) -> bool {
                        return std::ranges::find(this->enabled, value.first) != std::end(this->enabled);
                    }) |

@@ -86,7 +86,7 @@ namespace cont::pe::detail {
 
                 /// Copying section data, if needed
                 if (!section.raw_data.empty()) {
-                    auto sec_ptr = memory::address{data.data()}.offset(section.ptr_raw_data);
+                    auto sec_ptr = memory::address{data.data()}.offset(static_cast<std::ptrdiff_t>(section.ptr_raw_data));
                     if (auto write_res = sec_ptr.write(section.raw_data.data(), section.raw_data.size()); !write_res.has_value()) {
                         throw std::runtime_error("pe: rebuilder: unable to write section raw data");
                     }
@@ -102,7 +102,7 @@ namespace cont::pe::detail {
                         continue;
                     }
 
-                    win::data_directory_t dir_hdr = {
+                    const win::data_directory_t dir_hdr = {
                         .rva = static_cast<std::uint32_t>(section.virtual_address + props->offset),
                         .size = static_cast<std::uint32_t>(props->size),
                     };

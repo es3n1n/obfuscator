@@ -170,7 +170,7 @@ namespace analysis::bb_decomp {
 
             // Ignoring anything that wouldn't affect IP
             //
-            if (!insn_desc->is_jump() && !(insn_desc->flags & UNABLE_TO_ESTIMATE_JCC)) {
+            if (!insn_desc->is_jump() && (insn_desc->flags & UNABLE_TO_ESTIMATE_JCC) == 0) {
                 continue;
             }
 

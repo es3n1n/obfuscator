@@ -57,7 +57,7 @@ namespace obfuscator::transforms {
             if (!as_opt.has_value()) {
                 return;
             }
-            auto as = *as_opt;
+            auto* as = *as_opt;
 
             /// Detect sp-related things before we lift our stuff
             std::optional<zasm::Mem*> sp_mem = std::nullopt;
@@ -85,17 +85,17 @@ namespace obfuscator::transforms {
             const auto expr_size = this->get_var_value<int>(Var::EXPR_SIZE);
             assert(expr_size > 0);
             auto expression = mathop::ExpressionGenerator::get().generate(imm_bitsize, expr_size);
-            const auto evaluated = expression.emulate(mathop::imm_for_bits(imm_bitsize, imm_value));
+            const auto evaluated = expression.emulate(mathop::imm_for_bits(imm_bitsize, static_cast<std::int64_t>(imm_value)));
 
             /// Setup dst register and lift decryption
             as->mov(var_1, mathop::imm_to_zasm(evaluated));
 
             /// Lift decryption
-            const auto decryption_start_at = as->getCursor();
+            auto* const decryption_start_at = as->getCursor();
             expression.lift_revert(as, var_1);
 
             /// Remember the last decryption node
-            const auto decryption_ends_at = as->getCursor();
+            auto* const decryption_ends_at = as->getCursor();
 
             /// Prevent symbolic execution
             transform_util::anti_symbolic_execution(var_alloc, imm_bitsize, function->program.get(), as, decryption_start_at, decryption_ends_at);
@@ -116,7 +116,7 @@ namespace obfuscator::transforms {
 
             /// Update stack offset, if needed, because we're gonna change its layout with our pushes
             if (sp_mem.has_value()) {
-                (*sp_mem)->setDisplacement((*sp_mem)->getDisplacement() + var_alloc.stack_size());
+                (*sp_mem)->setDisplacement(static_cast<std::int64_t>((*sp_mem)->getDisplacement() + var_alloc.stack_size()));
                 logger::debug("constant_crypt: updated sp displacement at {:#x}", *insn->rva);
             }
 

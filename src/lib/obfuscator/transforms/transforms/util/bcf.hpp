@@ -11,7 +11,7 @@ namespace obfuscator::transform_util {
     /// \param post_generation_callback Post generation callback (to tamper instructions or something)
     /// \param predicate_generator Predicate generator
     inline void
-    generate_bogus_control_flow(Function* function, analysis::bb_t* bb, const std::function<void(analysis::bb_t*)>& post_generation_callback,
+    generate_bogus_control_flow(Function* function, const analysis::bb_t* bb, const std::function<void(analysis::bb_t*)>& post_generation_callback,
                                 // NOLINTNEXTLINE(performance-unnecessary-value-param)
                                 std::function<void(zasm::x86::Assembler*, zasm::Label, zasm::Label, analysis::VarAlloc*)> predicate_generator) {
 
@@ -44,7 +44,7 @@ namespace obfuscator::transform_util {
         /// Setup dead branch
         as = *function->cursor->after((*last_insn)->node_ref);
         as->bind(dummy_bb_label);
-        const auto label_node = as->getCursor();
+        auto* const label_node = as->getCursor();
 
         /// Create dead branch
         const auto new_bb = function->bb_storage->copy_bb(successor, as, function->program.get(), function->bb_provider.get());

@@ -120,7 +120,7 @@ namespace obfuscator::transforms {
             auto expr = mathop::ExpressionGenerator::get().generate(zasm::BitSize::_32, expr_size);
             auto lreg = var_alloc.get_gp32_lo(true);
 
-            const auto decryption_starts_at = as->getCursor();
+            auto* const decryption_starts_at = as->getCursor();
 
             /// Push x, lift expr
             var_alloc.push(as);
@@ -133,7 +133,7 @@ namespace obfuscator::transforms {
             /// Two semantically identical branches
             as->jz(dead_branch_label);
             as->jmp(successor_label);
-            const auto decryption_ends_at = as->getCursor();
+            auto* const decryption_ends_at = as->getCursor();
 
             /// Prevent symbolic execution
             transform_util::anti_symbolic_execution(var_alloc, zasm::BitSize::_32, program, as, decryption_starts_at, decryption_ends_at);

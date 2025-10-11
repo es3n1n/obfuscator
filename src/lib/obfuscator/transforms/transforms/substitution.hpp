@@ -130,7 +130,7 @@ namespace obfuscator::transforms {
                     continue;
                 }
 
-                auto& cb = rnd::item(it->second);
+                const auto& cb = rnd::item(it->second);
                 cb(function, insn.get());
             }
         }

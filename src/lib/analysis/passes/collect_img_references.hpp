@@ -22,7 +22,7 @@ namespace analysis::passes {
 
             // Obtaining IMM value and image base
             //
-            auto image = *ctx.image;
+            auto* image = *ctx.image;
             const auto imm_value = imm->value<std::uint64_t>();
             const auto base_address = image->get_image_base();
 

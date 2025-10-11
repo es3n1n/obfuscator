@@ -83,7 +83,7 @@ namespace obfuscator::config_merger {
         /// Iterate over the global defined vars for the transform
         for (auto& [tag, values] : config.global_transforms_config()) {
             /// Get the transform, its shared config
-            auto& transform = scheduler.transforms.at(tag);
+            const auto& transform = scheduler.transforms.at(tag);
             auto& shared_config = TransformSharedConfigStorage::get().get_for(tag);
 
             /// Apply vars
