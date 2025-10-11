@@ -95,7 +95,7 @@ namespace cont::pe::detail {
 
                 // Prepending relocation to the block
                 //
-                blocks[aligned_rva].emplace_back(std::move(relocation));
+                blocks[aligned_rva].emplace_back(relocation);
 
                 // Accounting entry
                 //
@@ -112,7 +112,7 @@ namespace cont::pe::detail {
             //
             auto& new_section = image->new_section(section_header);
             auto section_data = memory::address{new_section.raw_data.data()};
-            const auto section_end = section_data.offset(new_section.raw_data.size());
+            const auto section_end = section_data.offset(static_cast<std::ptrdiff_t>(new_section.raw_data.size()));
 
             // Serializing reloc entries
             //

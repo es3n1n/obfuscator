@@ -36,9 +36,9 @@ namespace analysis {
 
     class VarAlloc {
     public:
-        DEFAULT_CT_CTOR_DTOR(VarAlloc);
+        DEFAULT_CTOR_DTOR(VarAlloc);
         DEFAULT_COPY(VarAlloc);
-        constexpr explicit VarAlloc(LRUReg* lru_reg): lru_reg_(lru_reg) { }
+        explicit VarAlloc(LRUReg* lru_reg): lru_reg_(lru_reg) { }
 
         /// \brief Get least recently used register as Gp8
         /// \param random should we choose a random register across least recently used registers?

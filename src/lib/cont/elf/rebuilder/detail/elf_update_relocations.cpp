@@ -55,7 +55,8 @@ namespace cont::elf::detail {
 
                     switch (reloc.type) {
                     case RelocationType::HighLow: {
-                        info.emplace(static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE : R_386_RELATIVE));
+                        info.emplace(static_cast<std::ptrdiff_t>((img_mode == ImageMode::X64) ? R_X86_64_RELATIVE :
+                                                                                                R_386_RELATIVE)); // NOLINT(bugprone-branch-clone)
                         break;
                     default:
                         throw std::out_of_range("cont::elf::detail::update_relocations: Unsupported relocation type for ELF");
@@ -69,7 +70,8 @@ namespace cont::elf::detail {
 
             /// Assemble R_X86_64_RELATIVE first
             for (auto& [rva, reloc] : relocations | std::views::filter([img_mode](const auto& pair) -> bool {
-                                          return pair.first == (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE);
+                                          return pair.first ==
+                                                 (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE); // NOLINT(bugprone-branch-clone)
                                       })) {
                 assert(reloc->info_raw.has_value());
                 *out_ptr = Rela{
@@ -82,7 +84,8 @@ namespace cont::elf::detail {
 
             /// Assemble the rest of relocations
             for (auto& [rva, reloc] : relocations | std::views::filter([img_mode](const auto& pair) -> bool {
-                                          return pair.first != (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE);
+                                          return pair.first !=
+                                                 (img_mode == ImageMode::X64 ? R_X86_64_RELATIVE : R_386_RELATIVE); // NOLINT(bugprone-branch-clone)
                                       })) {
                 assert(reloc->info_raw.has_value());
                 *out_ptr = Rela{

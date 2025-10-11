@@ -12,7 +12,7 @@ namespace func_parser {
         NON_COPYABLE(Instance);
 
         void setup(cont::ImageBase* image, const config_parser::func_parser_config_t& config, const config_parser::obfuscator_config_t& obfuscator_config,
-                   const std::vector<config_parser::function_configuration_t> function_configurations) {
+                   const std::vector<config_parser::function_configuration_t>& function_configurations) {
             image_ = image;
             config_ = config;
             obfuscator_config_ = obfuscator_config;
@@ -62,7 +62,7 @@ namespace func_parser {
         function_list_t function_list_; // function_lists_ combined and sanitized basically
         config_parser::func_parser_config_t config_ = {};
         config_parser::obfuscator_config_t obfuscator_config_ = {};
-        std::vector<config_parser::function_configuration_t> function_configurations_ = {};
+        std::vector<config_parser::function_configuration_t> function_configurations_;
         std::optional<progress::Progress> progress_ = std::nullopt;
     };
 } // namespace func_parser

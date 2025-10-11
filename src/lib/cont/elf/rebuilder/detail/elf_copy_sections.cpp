@@ -9,7 +9,7 @@ namespace cont::elf::detail {
 
             /// Copy the section raw data to the result
             const auto src = memory::address(section.raw_data.data());
-            const auto dst = memory::address(result.data()).offset(section.ptr_raw_data);
+            const auto dst = memory::address(result.data()).offset(static_cast<std::ptrdiff_t>(section.ptr_raw_data));
 
             std::memcpy(dst.ptr(), src.ptr(), section.size_raw_data);
         }

@@ -45,7 +45,7 @@ namespace cont {
     struct Relocation {
         memory::address rva;
         std::uint8_t size = 0; // in bytes
-        RelocationType type;
+        RelocationType type = RelocationType::Absolute;
         std::optional<std::size_t> sym_index = std::nullopt;
         std::optional<std::ptrdiff_t> addend = std::nullopt;
         std::optional<std::ptrdiff_t> info_raw = std::nullopt;
@@ -258,7 +258,7 @@ namespace cont {
             }
 
             const auto offset = rva.inner() - section->virtual_address;
-            return memory::address{section->raw_data.data()}.offset(offset).as<std::add_pointer_t<Ty>>();
+            return memory::address{section->raw_data.data()}.offset(static_cast<std::ptrdiff_t>(offset)).as<std::add_pointer_t<Ty>>();
         }
 
         [[nodiscard]] zasm::MachineMode machine_mode() const {

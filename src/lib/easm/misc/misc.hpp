@@ -80,7 +80,7 @@ namespace easm {
         bool result = false;
 
         if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
-            for (auto& op : detail->getOperands()) {
+            for (const auto& op : detail->getOperands()) {
                 if (result) {
                     break;
                 }
@@ -214,7 +214,10 @@ namespace easm {
                                     const std::size_t index [[maybe_unused]], const zasm::Reg reg [[maybe_unused]]) {
         const auto operand_size = get_operand_size(machine_mode, insn, index);
         const auto reg_size = reg.getBitSize(machine_mode);
-        assert(operand_size == reg_size);
+        if (operand_size != reg_size) {
+            assert(false);
+            throw std::runtime_error("assert_operand_size: Operand size does not match register size");
+        }
     }
 
     inline bool is_sp(const zasm::MachineMode machine_mode, const zasm::Reg reg) {
@@ -262,7 +265,7 @@ namespace easm {
         bool result = false;
 
         if (auto detail = insn.getDetail(zasm::MachineMode::AMD64); detail.hasValue()) {
-            for (auto& op : detail->getOperands()) {
+            for (const auto& op : detail->getOperands()) {
                 if (result) {
                     break;
                 }

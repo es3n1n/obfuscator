@@ -30,8 +30,8 @@ namespace analysis::passes {
 
                 // Creating label for the referenced loc
                 //
-                const auto referenced_loc_label = ctx.function->program.get()->createLabel(referenced_loc_name.c_str());
-                const auto referenced_loc_label_node = ctx.function->program.get()->bindLabel(referenced_loc_label);
+                const auto referenced_loc_label = ctx.function->program->createLabel(referenced_loc_name.c_str());
+                const auto referenced_loc_label_node = ctx.function->program->bindLabel(referenced_loc_label);
                 if (!referenced_loc_label_node) [[unlikely]] {
                     throw std::runtime_error("analysis: Unable to bind the label");
                 }
@@ -42,7 +42,7 @@ namespace analysis::passes {
                 if (referenced_insn == ctx.function->instructions_lookup.end()) [[unlikely]] {
                     throw std::runtime_error("analysis: Unable to find referenced insn");
                 }
-                ctx.function->program.get()->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
+                ctx.function->program->moveBefore(referenced_insn->second->node_ref, *referenced_loc_label_node);
                 referenced_insn->second->bb_ref->push_label(*referenced_loc_label_node, ctx.function->bb_provider.get());
 
                 // Iterating over instructions that referenced this RVA

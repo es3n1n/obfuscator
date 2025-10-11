@@ -17,7 +17,7 @@ namespace cont::elf {
     }
 
     [[nodiscard]] bool Image::verify_integrity() const {
-        return std::memcmp(x64()->e_ident, ELFMAG, SELFMAG) == 0;
+        return std::memcmp(static_cast<uint8_t*>(x64()->e_ident), ELFMAG, SELFMAG) == 0;
     }
 
     [[nodiscard]] std::size_t Image::get_image_base() const {

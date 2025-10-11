@@ -36,6 +36,7 @@ Checks: >
     -cppcoreguidelines-pro-type-union-access,
     -cppcoreguidelines-special-member-functions,
     -hicpp-avoid-c-arrays,
+    -hicpp-signed-bitwise,
     -hicpp-special-member-functions,
     -misc-include-cleaner,
     -misc-no-recursion,

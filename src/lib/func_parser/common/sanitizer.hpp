@@ -24,7 +24,7 @@ namespace func_parser::sanitizer {
             // Checking whether function is in an executable section or not
             //
             bool in_exec_mem = false;
-            for (auto& sec : exec_sections) {
+            for (const auto& sec : exec_sections) {
                 in_exec_mem = item.rva >= sec.virtual_address && item.rva <= (sec.virtual_address + sec.virtual_size);
 
                 if (in_exec_mem) {
